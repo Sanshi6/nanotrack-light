@@ -1,0 +1,9 @@
+.vscode
+__pycache__
+build
+*.DS_Store
+*.txt
+bin/logs/*
+*.json
+logs/*
+*.pth
