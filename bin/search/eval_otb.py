@@ -171,7 +171,7 @@ def eval_auc_tune(result_path, dataset='OTB2015'):
 
 if __name__ == "__main__":
     if len(sys.argv) < 5:
-        print('python ./lib/core/eval_otb.py OTB2013 ./result SiamFC* 0 1')
+        print('python ./lib/core/eval_otb.py OTB2013 ./Ray_result SiamFC* 0 1')
         exit()
     dataset = sys.argv[1]
     result_path = sys.argv[2]

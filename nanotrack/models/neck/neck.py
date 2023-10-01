@@ -7,29 +7,31 @@ from __future__ import unicode_literals
 
 import torch.nn as nn
 
+
 class AdjustLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(AdjustLayer, self).__init__()
 
-        self.in_channels=in_channels
+        self.in_channels = in_channels
 
-        self.out_channels=out_channels 
+        self.out_channels = out_channels
 
         self.downsample = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False),
             nn.BatchNorm2d(out_channels),
-            ) 
+        )
 
     def forward(self, x):
 
         if self.in_channels != self.out_channels:
-            x = self.downsample(x) 
+            x = self.downsample(x)
 
-        if x.size(3) < 16: 
+        if x.size(3) < 16:
             l = 2
-            r = l + 4 
+            r = l + 4
             x = x[:, :, l:r, l:r]
-        return x 
+        return x
+
 
 class AdjustAllLayer(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -39,7 +41,7 @@ class AdjustAllLayer(nn.Module):
             self.downsample = AdjustLayer(in_channels[0], out_channels[0])
         else:
             for i in range(self.num):
-                self.add_module('downsample'+str(i+2),
+                self.add_module('downsample' + str(i + 2),
                                 AdjustLayer(in_channels[i], out_channels[i]))
 
     def forward(self, features):
@@ -48,6 +50,6 @@ class AdjustAllLayer(nn.Module):
         else:
             out = []
             for i in range(self.num):
-                adj_layer = getattr(self, 'downsample'+str(i+2))
+                adj_layer = getattr(self, 'downsample' + str(i + 2))
                 out.append(adj_layer(features[i]))
-            return out 
+            return out

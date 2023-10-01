@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import math
 
-__all__ = ['mobilenetv3_large', 'mobilenetv3_small']
+__all__ = ['mobilenetv3_small']
 
 
 def _make_divisible(v, divisor, min_value=None):
@@ -213,8 +213,9 @@ def mobilenetv3_small_v3(**kwargs):
 from torchsummary import summary
 
 if __name__ == '__main__':
+    # print(_make_divisible(13, 11))
     net = mobilenetv3_small().cuda()
-    # summary(net, (3, 255, 255))
+    summary(net, (3, 127, 127))
     print(net)
 
 """
@@ -410,4 +411,60 @@ MobileNetV3(
     )
   )
 )
+
+kernel size, stride, padding, size, Rf, stride
+3,2,1, size: 128 Rf: 3 stride: 2
+3,2,1, size: 64 Rf: 7 stride: 4
+3,2,1, size: 32 Rf: 15 stride: 8
+3,1,1, size: 32 Rf: 31 stride: 8
+5,2,2, size: 16 Rf: 63 stride: 16
+5,1,2, size: 16 Rf: 127 stride: 16
+5,1,2, size: 16 Rf: 191 stride: 16
+5,1,2, size: 16 Rf: 255 stride: 16
+5,1,2, size: 16 Rf: 319 stride: 16
 """
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

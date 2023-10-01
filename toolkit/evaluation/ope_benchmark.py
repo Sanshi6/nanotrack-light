@@ -7,7 +7,7 @@ from ..utils import overlap_ratio, success_overlap, success_error
 class OPEBenchmark:
     """
     Args:
-        result_path: result path of your tracker
+        result_path: Ray_result path of your tracker
                 should the same format like VOT
     """
     def __init__(self, dataset):
@@ -123,9 +123,9 @@ class OPEBenchmark:
 
     def show_result(self, success_ret, precision_ret=None,
             norm_precision_ret=None, show_video_level=False, helight_threshold=0.6):
-        """pretty print result
+        """pretty print Ray_result
         Args:
-            result: returned dict from function eval
+            Ray_result: returned dict from function eval
         """
         # sort tracker
         tracker_auc = {}

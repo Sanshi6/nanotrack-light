@@ -4,9 +4,9 @@ BACKBONE:
     TYPE: "mobilenetv3_small"
     KWARGS:
         used_layers:  [4] #
-    PRETRAINED:  './models/pretrained/mobilenetv3_small_1.0.pth'  
+    PRETRAINED:  './models/pretrained/mobilenetv3_small_1.0.pth'
     TRAIN_LAYERS:  ['features'] # 
-    TRAIN_EPOCH: 10 
+    TRAIN_EPOCH: 10
     LAYERS_LR: 0.1
 
 ADJUST: 
@@ -86,5 +86,5 @@ DATASET:
         FLIP: 0.0 
         COLOR: 1.0 
 
-    NEG: 0.0
+    NEG: 0.2
     GRAY: 0.0

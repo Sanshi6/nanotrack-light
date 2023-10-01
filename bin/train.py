@@ -33,6 +33,8 @@ from nanotrack.utils.misc import describe, commit
 from nanotrack.models.model_builder import ModelBuilder
 from nanotrack.datasets.dataset import BANDataset
 from nanotrack.core.config import cfg
+from nanotrack.models.backbone.MobileOne import _initialize_weights
+
 
 import sys
 sys.path.append(os.getcwd())
@@ -73,7 +75,9 @@ def build_data_loader():
     return train_loader
 
 
+# backbone for train
 def build_opt_lr(model, current_epoch=0):
+    # backbone train process
     for param in model.backbone.parameters():
         param.requires_grad = False
     for m in model.backbone.modules():
@@ -87,18 +91,31 @@ def build_opt_lr(model, current_epoch=0):
                 if isinstance(m, nn.BatchNorm2d):
                     m.train()
 
+    # for MobileOne, train last stage.
+    for param in getattr(model.backbone, 'stage4').parameters():
+        param.requires_grad = True
+    for m in getattr(model.backbone, 'stage4').modules():
+        if isinstance(m, nn.BatchNorm2d):
+            m.train()
+
+    # trainable parameters
     trainable_params = []
+
+    # backbone
     trainable_params += [{'params': filter(lambda x: x.requires_grad,
                                            model.backbone.parameters()),
                           'lr': cfg.BACKBONE.LAYERS_LR * cfg.TRAIN.BASE_LR}]
 
+    # adjust parameters
     if cfg.ADJUST.ADJUST:
         trainable_params += [{'params': model.neck.parameters(),
                               'lr': cfg.TRAIN.BASE_LR}]
 
+    # head
     trainable_params += [{'params': model.ban_head.parameters(),
                           'lr': cfg.TRAIN.BASE_LR}]
 
+    # optimizer no change
     optimizer = torch.optim.SGD(trainable_params,
                                 momentum=cfg.TRAIN.MOMENTUM,
                                 weight_decay=cfg.TRAIN.WEIGHT_DECAY)
@@ -212,7 +229,7 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
                 log_grads(model.module, tb_writer, tb_idx)
 
             # clip gradient
-            clip_grad_norm_(model.parameters(), cfg.TRAIN.GRAD_CLIP)
+            # clip_grad_norm_(model.parameters(), cfg.TRAIN.GRAD_CLIP)
             optimizer.step()
 
         batch_time = time.time() - end
@@ -266,6 +283,9 @@ def main():
         logger.info("config \n{}".format(json.dumps(cfg, indent=4)))
 
     model = ModelBuilder(cfg).cuda().train()
+    _initialize_weights(model)
+
+    logger.info(model)
 
     if cfg.BACKBONE.PRETRAINED:
         cur_path = os.path.dirname(os.path.realpath(__file__))
@@ -276,6 +296,8 @@ def main():
         tb_writer = SummaryWriter(cfg.TRAIN.LOG_DIR)
     else:
         tb_writer = None
+
+    model = load_pretrain(model, r'E:\SiamProject\NanoTrack\models\snapshot\test.pth').cuda().eval()
 
     train_loader = build_data_loader()
 

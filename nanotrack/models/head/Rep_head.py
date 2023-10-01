@@ -1,7 +1,27 @@
 import torch
 import torch.nn as nn
 import math
-from nanotrack.core.xcorr import xcorr_fast, xcorr_depthwise, xcorr_pixelwise, corr_group
+from nanotrack.core.xcorr import xcorr_fast, xcorr_depthwise, xcorr_pixelwise
+from nanotrack.models.backbone.MobileOne import MobileOneBlock
+
+
+
+
+class SeparableConv2d_BNReLU(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=1, stride=1, padding=0, dilation=1, bias=False):
+        super(SeparableConv2d_BNReLU, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size, stride, padding, dilation, groups=in_channels,
+                               bias=bias)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, 1, 1, 0, 1, 1, bias=bias)
+        self.BN = nn.BatchNorm2d(out_channels)
+        self.ReLU = nn.ReLU()
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.pointwise(x)
+        x = self.ReLU(self.BN(x))
+        return x
 
 
 class BAN(nn.Module):
@@ -118,11 +138,142 @@ class PixelwiseXCorr(nn.Module):
         self.CA_layer = CAModule(channels=64)
 
     def forward(self, kernel, search):
-        feature = corr_group(search, kernel)  #
+        feature = xcorr_pixelwise(search, kernel)  #
 
         corr = self.CA_layer(feature)
 
         return corr
+
+
+# 2023.9.12 head + Rep
+class RepHead(nn.Module):
+    def __init__(self, in_channels=64, out_channels=64):
+        super(RepHead, self).__init__()
+        # NanoTrackV2
+        self.corr_pw_reg = PixelwiseXCorr(48, 48)
+
+        self.corr_pw_cls = PixelwiseXCorr(48, 48)
+
+        cls_tower = []
+        bbox_tower = []
+
+        # MobileOneBlock(in_channels=self.in_planes, out_channels, kernel_size, stride, padding, groups,
+        # inference_mode, use_se,num_conv_branches
+
+        # cls tower stage
+        # cls stage 0
+        cls_tower.append(MobileOneBlock(64, 64, 3, 1, 1,
+                                        1, 64, False, False, 4))
+        cls_tower.append(MobileOneBlock(64, 96, 1, 1, 0,
+                                        1, 1, False, False, 4))
+
+        # cls stage 1
+        cls_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                        1, 96, False, False, 4))
+        cls_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                        1, 1, False, False, 4))
+
+        # cls stage 2
+        cls_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                        1, 96, False, False, 4))
+        cls_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                        1, 1, False, False, 4))
+
+        # cls stage 3
+        cls_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                        1, 96, False, False, 4))
+        cls_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                        1, 1, False, False, 4))
+
+        # cls stage 4
+        cls_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                        1, 96, False, False, 4))
+        cls_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                        1, 1, False, False, 4))
+
+        # cls stage 5
+        cls_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                        1, 96, False, False, 4))
+        cls_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                        1, 1, False, False, 4))
+
+        # bbox stage
+        # bbox_tower stage 0
+        bbox_tower.append(MobileOneBlock(64, 64, 3, 1, 1,
+                                         1, 64, False, False, 4))
+        bbox_tower.append(MobileOneBlock(64, 96, 1, 1, 0,
+                                         1, 1, False, False, 4))
+
+        # bbox_tower stage 1
+        bbox_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                         1, 96, False, False, 4))
+        bbox_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                         1, 1, False, False, 4))
+
+        # bbox_tower stage 2
+        bbox_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                         1, 96, False, False, 4))
+        bbox_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                         1, 1, False, False, 4))
+
+        # bbox_tower stage 3
+        bbox_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                         1, 96, False, False, 4))
+        bbox_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                         1, 1, False, False, 4))
+
+        # bbox_tower stage 4
+        bbox_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                         1, 96, False, False, 4))
+        bbox_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                         1, 1, False, False, 4))
+
+        # bbox_tower stage 5
+        bbox_tower.append(MobileOneBlock(96, 96, 3, 1, 1,
+                                         1, 96, False, False, 4))
+        bbox_tower.append(MobileOneBlock(96, 96, 1, 1, 0,
+                                         1, 1, False, False, 4))
+
+        self.add_module('cls_pw_tower', nn.Sequential(*cls_tower))
+        self.add_module('bbox_pw_tower', nn.Sequential(*bbox_tower))
+
+        self.cls_pred = nn.Sequential(
+            nn.Conv2d(96, 2, kernel_size=1, stride=1, padding=0),
+        )
+
+        self.bbox_pred = nn.Sequential(
+            nn.Conv2d(96, 4, kernel_size=1, stride=1, padding=0),
+        )
+
+        for modules in [self.cls_pw_tower, self.bbox_pw_tower,
+                        self.cls_pred, self.bbox_pred]:
+            for m in modules.modules():
+                if isinstance(m, nn.Conv2d):
+                    n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                    m.weight.data.normal_(0, math.sqrt(2. / n))
+                    if m.bias is not None:
+                        m.bias.data.zero_()
+                elif isinstance(m, nn.BatchNorm2d):
+                    m.weight.data.fill_(1)
+                    m.bias.data.zero_()
+                elif isinstance(m, nn.Linear):
+                    m.weight.data.normal_(0, 0.01)
+                    m.bias.data.zero_()
+
+    def forward(self, z_f, x_f):
+        pw_reg = self.corr_pw_reg(z_f, x_f)
+
+        pw_cls = self.corr_pw_cls(z_f, x_f)
+
+        cls_tower = self.cls_pw_tower(pw_cls)
+        logits = self.cls_pred(cls_tower)
+
+        bbox_tower = self.bbox_pw_tower(pw_reg)
+        bbox_reg = self.bbox_pred(bbox_tower)
+        bbox_reg = torch.exp(bbox_reg)
+
+        return logits, bbox_reg
+
 
 class Rep_DepthwiseBAN(BAN):
     def __init__(self, in_channels=64, out_channels=64, weighted=False):
@@ -219,7 +370,8 @@ class Rep_DepthwiseBAN(BAN):
 
 
 if __name__ == '__main__':
-    model = Rep_DepthwiseBAN(64, 64)
-    x1 = torch.ones(1, 64, 6, 6)
-    x2 = torch.ones(1, 64, 22, 22)
-    model(x1, x2)
+    model = RepHead(64, 64)
+    x1 = torch.ones(1, 1024, 8, 8)
+    x2 = torch.ones(1, 1024, 22, 22)
+    out = model(x1, x2)
+    print(out[0].shape)

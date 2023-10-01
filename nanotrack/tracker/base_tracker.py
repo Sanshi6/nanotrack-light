@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 import torch
 
-from nanotrack.core.config import cfg
+# from nanotrack.core.config import cfg
 
 class BaseTracker(object):
     """ Base tracker of single objec tracking
@@ -34,7 +34,7 @@ class BaseTracker(object):
 
 
 class SiameseTracker(BaseTracker):
-    def get_subwindow(self, im, pos, model_sz, original_sz, avg_chans):
+    def get_subwindow(self, im, pos, model_sz, original_sz, avg_chans, cfg):
         """
         args:
             im: bgr based image

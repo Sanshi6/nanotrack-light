@@ -7,3 +7,5 @@ bin/logs/*
 *.json
 logs/*
 *.pth
+*.bin
+*.onnx

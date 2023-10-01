@@ -99,7 +99,7 @@ class Augmentation:
         x1, y1 = crop_bbox.x1, crop_bbox.y1
         bbox = Corner(bbox.x1 - x1, bbox.y1 - y1,
                       bbox.x2 - x1, bbox.y2 - y1)
-
+        # bbox for crop bbox location.
         if self.scale:
             bbox = Corner(bbox.x1 / scale_x, bbox.y1 / scale_y,
                           bbox.x2 / scale_x, bbox.y2 / scale_y)

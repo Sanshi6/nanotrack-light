@@ -15,24 +15,30 @@ from nanotrack.models.backbone import get_backbone
 from nanotrack.models.head import get_ban_head
 from nanotrack.models.neck import get_neck 
 
+
+# test
+from nanotrack.models.backbone.RLightTrack1 import mobileone
+
+
 class ModelBuilder(nn.Module):
     def __init__(self, cfg):
         super(ModelBuilder, self).__init__()
         self.cfg = cfg
 
         # build backbone
-        self.backbone = get_backbone(cfg.BACKBONE.TYPE,
-                                     **cfg.BACKBONE.KWARGS)
-
+        self.backbone = mobileone(inference_mode=False, variant='s0')
+        # self.backbone = get_backbone(cfg.BACKBONE.TYPE,
+        #                              **cfg.BACKBONE.KWARGS)
         # build adjust layer
         if cfg.ADJUST.ADJUST:
             self.neck = get_neck(cfg.ADJUST.TYPE,
                                  **cfg.ADJUST.KWARGS)
-
         # build ban head
         if cfg.BAN.BAN:
             self.ban_head = get_ban_head(cfg.BAN.TYPE,
-                                     **cfg.BAN.KWARGS)
+                                            **cfg.BAN.KWARGS)
+
+
 
     def template(self, z):
         zf = self.backbone(z)

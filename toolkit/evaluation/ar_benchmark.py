@@ -30,8 +30,10 @@ class AccuracyRobustnessBenchmark:
         Returns:
             ret: dict of results
         """
+
         if eval_trackers is None:
             eval_trackers = self.dataset.tracker_names
+
         if isinstance(eval_trackers, str):
             eval_trackers = [eval_trackers]
 
@@ -43,7 +45,7 @@ class AccuracyRobustnessBenchmark:
         return result
 
     def show_result(self, result, eao_result=None, show_video_level=False, helight_threshold=0.5):
-        """pretty print result
+        """pretty print Ray_result
         Args:
             result: returned dict from function eval
         """
@@ -70,7 +72,7 @@ class AccuracyRobustnessBenchmark:
         else:
             tracker_names = list(result.keys())
         for tracker_name in tracker_names:
-        # for tracker_name, ret in result.items():
+        # for tracker_name, ret in Ray_result.items():
             ret = result[tracker_name]
             overlaps = list(itertools.chain(*ret['overlaps'].values()))
             accuracy = np.nanmean(overlaps)

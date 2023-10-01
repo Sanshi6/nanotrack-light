@@ -49,7 +49,7 @@ class EAOBenchmark:
         return ret
 
     def show_result(self, result, topk=10):
-        """pretty print result
+        """pretty print Ray_result
         Args:
             result: returned dict from function eval
         """
@@ -65,7 +65,7 @@ class EAOBenchmark:
                                  key=lambda x: x[1]['all'],
                                  reverse=True)[:topk]
             for tracker_name, eao in tracker_eao:
-            # for tracker_name, ret in result.items():
+            # for tracker_name, ret in Ray_result.items():
                 print(formatter.format(tracker_name, eao))
             print(bar)
         else:
@@ -81,7 +81,7 @@ class EAOBenchmark:
                                    reverse=True)[:topk]
             sorted_tacker = [x[0] for x in sorted_tacker]
             for tracker_name in sorted_tacker:
-            # for tracker_name, ret in result.items():
+            # for tracker_name, ret in Ray_result.items():
                 print("|{:^20}|".format(tracker_name)+formatter.format(
                     *[result[tracker_name][x] for x in self.tags]))
             print(bar)

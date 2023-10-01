@@ -10,5 +10,5 @@ TRACKS = {
           'NanoTracker': NanoTracker 
          } 
 
-def build_tracker(model): 
-    return TRACKS[cfg.TRACK.TYPE](model) 
+def build_tracker(model, cfg):
+    return TRACKS[cfg.TRACK.TYPE](model, cfg)

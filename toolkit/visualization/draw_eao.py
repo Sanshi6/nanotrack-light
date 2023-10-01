@@ -45,5 +45,5 @@ def draw_eao(result):
     plt.show()
 
 if __name__ == '__main__':
-    result = pickle.load(open("../../result.pkl", 'rb'))
+    result = pickle.load(open("../../Ray_result.pkl", 'rb'))
     draw_eao(result)

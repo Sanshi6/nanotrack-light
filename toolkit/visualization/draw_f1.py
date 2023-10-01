@@ -22,7 +22,7 @@ def draw_f1(result, bold_name=None):
     plt.axis([0, 1, 0, 1])
     plt.title(r'\textbf{VOT2018-LT Precision vs Recall}')
 
-    # draw result line
+    # draw Ray_result line
     all_precision = {}
     all_recall = {}
     best_f1 = {}

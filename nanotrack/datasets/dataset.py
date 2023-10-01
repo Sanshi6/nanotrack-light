@@ -249,7 +249,7 @@ class BANDataset(Dataset):
         template_image = cv2.imread(template[0])
         search_image = cv2.imread(search[0])
 
-        # get bounding box, negtive ? positive?
+        # get bounding box, negtive ? positive?, negtive, not care, find crop bbox, for search and template
         template_box = self._get_bbox(template_image, template[1])
         search_box = self._get_bbox(search_image, search[1])
 

@@ -50,5 +50,6 @@ def select_iou_loss(pred_loc, label_loc, label_cls):
 
     label_loc = label_loc.permute(0, 2, 3, 1).reshape(-1, 4)
     label_loc = torch.index_select(label_loc, 0, pos)
+    # print(torch.max(label_loc), torch.min(label_loc))
 
     return linear_iou(pred_loc, label_loc)

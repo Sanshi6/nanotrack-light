@@ -10,8 +10,12 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn import init
 
 __all__ = ['MobileOne', 'mobileone', 'reparameterize_model', 'PlainMobileOne']
+
+
+
 
 
 def _initialize_weights(self):
@@ -28,6 +32,7 @@ def _initialize_weights(self):
         elif isinstance(m, nn.Linear):
             m.weight.data.normal_(0, 0.01)
             m.bias.data.zero_()
+
 
 class SEBlock(nn.Module):
     """ Squeeze and Excite module.
@@ -144,6 +149,7 @@ class MobileOneBlock(nn.Module):
             if kernel_size > 1:
                 self.rbr_scale = self._conv_bn(kernel_size=1,
                                                padding=0)
+        _initialize_weights(self)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """ Apply forward pass. """
@@ -336,11 +342,12 @@ class MobileOne(nn.Module):
         self.stage3 = self._make_stage(int(256 * width_multipliers[2]), num_blocks_per_stage[2],
                                        num_se_blocks=int(num_blocks_per_stage[2] // 2) if use_se else 0, stride=True)
         self.stage4 = self._make_stage(int(512 * width_multipliers[3]), num_blocks_per_stage[3],
-                                       num_se_blocks=num_blocks_per_stage[3] if use_se else 0, stride=False)
+                                       num_se_blocks=num_blocks_per_stage[3] if use_se else 0, stride=True)
         # self.gap = nn.AdaptiveAvgPool2d(output_size=1)
         # self.linear = nn.Linear(int(512 * width_multipliers[3]), num_classes)
 
         _initialize_weights(self)
+
     def _make_stage(self,
                     planes: int,
                     num_blocks: int,
@@ -442,24 +449,6 @@ def reparameterize_model(model: torch.nn.Module) -> nn.Module:
         if hasattr(module, 'reparameterize'):
             module.reparameterize()
     return model
-
-
-class test(nn.Module):
-    def __init__(self):
-        super(test, self).__init__()
-        self.conv0 = MobileOneBlock(in_channels=3,
-                                    out_channels=64,
-                                    kernel_size=3,
-                                    stride=1,
-                                    padding=1,
-                                    groups=1,
-                                    inference_mode=False,
-                                    use_se=False)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """ Apply forward pass. """
-        x = self.conv0(x)
-        return x
 
 
 class PlainMobileOne(nn.Module):
@@ -741,8 +730,6 @@ class PlainMobileOne(nn.Module):
         )
         _initialize_weights(self)
 
-
-
     def forward(self, x):
         x = self.stage0(x)
         x = self.stage1(x)
@@ -754,6 +741,7 @@ class PlainMobileOne(nn.Module):
 
 from thop import profile
 from torchsummary import summary
+
 if __name__ == '__main__':
     """
     input = torch.randn(1, requires_grad=True)
@@ -762,20 +750,25 @@ if __name__ == '__main__':
     loss = F.binary_cross_entropy_with_logits(input, target)
     loss.backward()
     """
-    net = mobileone()
+    net = mobileone().cuda()
     net.eval()
-    # net = reparameterize_model(net)
-    input = torch.ones(1, 3, 255, 255)
-    a = net(input)
-    print(a.shape)
-    net = reparameterize_model(net)
-    net.cuda()
-    input.cuda()
-    summary(net, input)
-    input = torch.ones(1, 3, 255, 255)
-    b = net(input)
+    net = reparameterize_model(net).cuda()
     print(net)
-    print(b.shape)
+    input_size = (3, 255, 255)
+    summary(net, input_size)
+    # summary(net, data)
+    # net = reparameterize_model(net)
+    # input = torch.ones(1, 3, 255, 255)
+    # a = net(input)
+    # print(a.shape)
+    # net = reparameterize_model(net)
+    # net.cuda()
+    # input.cuda()
+    # summary(net, input)
+    # input = torch.ones(1, 3, 255, 255)
+    # b = net(input)
+    # print(net)
+    # print(b.shape)
     # net = PlainMobileOne()
     # out = net(input)
     # print(out.shape)

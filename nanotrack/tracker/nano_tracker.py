@@ -5,25 +5,24 @@ from __future__ import unicode_literals
 
 import numpy as np
 
-from nanotrack.core.config import cfg
 from nanotrack.tracker.base_tracker import SiameseTracker
 from nanotrack.utils.bbox import corner2center
 
 
 class NanoTracker(SiameseTracker):
-    def __init__(self, model):
+    def __init__(self, model, cfg):
         super(NanoTracker, self).__init__()
         # self.score_size = (cfg.TRACK.INSTANCE_SIZE - cfg.TRACK.EXEMPLAR_SIZE) // \
         #     cfg.POINT.STRIDE + 1 + cfg.TRACK.BASE_SIZE
-
-        self.score_size = cfg.TRACK.OUTPUT_SIZE
+        self.cfg = cfg
+        self.score_size = self.cfg.TRACK.OUTPUT_SIZE
 
         hanning = np.hanning(self.score_size)
         window = np.outer(hanning, hanning)
         self.cls_out_channels = 2
         self.window = window.flatten()
 
-        self.points = self.generate_points(cfg.POINT.STRIDE, self.score_size)
+        self.points = self.generate_points(self.cfg.POINT.STRIDE, self.score_size)
         self.model = model
         self.model.eval()
 
@@ -74,8 +73,8 @@ class NanoTracker(SiameseTracker):
         self.size = np.array([bbox[2], bbox[3]])
 
         # calculate z crop size
-        w_z = self.size[0] + cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
-        h_z = self.size[1] + cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
+        w_z = self.size[0] + self.cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
+        h_z = self.size[1] + self.cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
         s_z = round(np.sqrt(w_z * h_z))
 
         # calculate channle average 
@@ -83,8 +82,8 @@ class NanoTracker(SiameseTracker):
 
         # get crop
         z_crop = self.get_subwindow(img, self.center_pos,
-                                    cfg.TRACK.EXEMPLAR_SIZE,
-                                    s_z, self.channel_average)
+                                    self.cfg.TRACK.EXEMPLAR_SIZE,
+                                    s_z, self.channel_average, self.cfg)
         self.model.template(z_crop)
 
     def track(self, img):
@@ -94,14 +93,14 @@ class NanoTracker(SiameseTracker):
         return:
             bbox(list):[x, y, width, height]  
         """
-        w_z = self.size[0] + cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
-        h_z = self.size[1] + cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
+        w_z = self.size[0] + self.cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
+        h_z = self.size[1] + self.cfg.TRACK.CONTEXT_AMOUNT * np.sum(self.size)
         s_z = np.sqrt(w_z * h_z)
-        scale_z = cfg.TRACK.EXEMPLAR_SIZE / s_z
-        s_x = s_z * (cfg.TRACK.INSTANCE_SIZE / cfg.TRACK.EXEMPLAR_SIZE)
+        scale_z = self.cfg.TRACK.EXEMPLAR_SIZE / s_z
+        s_x = s_z * (self.cfg.TRACK.INSTANCE_SIZE / self.cfg.TRACK.EXEMPLAR_SIZE)
         x_crop = self.get_subwindow(img, self.center_pos,
-                                    cfg.TRACK.INSTANCE_SIZE,
-                                    round(s_x), self.channel_average)
+                                    self.cfg.TRACK.INSTANCE_SIZE,
+                                    round(s_x), self.channel_average, self.cfg)
 
         outputs = self.model.track(x_crop)
 
@@ -122,20 +121,20 @@ class NanoTracker(SiameseTracker):
         # aspect ratio penalty
         r_c = change((self.size[0] / self.size[1]) /
                      (pred_bbox[2, :] / pred_bbox[3, :]))
-        penalty = np.exp(-(r_c * s_c - 1) * cfg.TRACK.PENALTY_K)
+        penalty = np.exp(-(r_c * s_c - 1) * self.cfg.TRACK.PENALTY_K)
 
         # score
         pscore = penalty * score
 
         # window penalty
-        pscore = pscore * (1 - cfg.TRACK.WINDOW_INFLUENCE) + \
-                 self.window * cfg.TRACK.WINDOW_INFLUENCE
+        pscore = pscore * (1 - self.cfg.TRACK.WINDOW_INFLUENCE) + \
+                 self.window * self.cfg.TRACK.WINDOW_INFLUENCE
 
         best_idx = np.argmax(pscore)
 
         bbox = pred_bbox[:, best_idx] / scale_z
 
-        lr = penalty[best_idx] * score[best_idx] * cfg.TRACK.LR
+        lr = penalty[best_idx] * score[best_idx] * self.cfg.TRACK.LR
 
         cx = bbox[0] + self.center_pos[0]
 

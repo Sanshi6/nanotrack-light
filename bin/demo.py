@@ -29,7 +29,7 @@ parser.add_argument('--snapshot', default='models/pretrained/nanotrackv2.pth', t
 
 parser.add_argument('--video_name', default='./bin/girl_dance.mp4', type=str, help='videos or image files')
 
-parser.add_argument('--save', action='store_true', help='whether visualzie result') 
+parser.add_argument('--save', action='store_true', help='whether visualzie Ray_result')
 
 args = parser.parse_args()
 

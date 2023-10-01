@@ -12,6 +12,9 @@ from nanotrack.models.head.ban_v1 import UPChannelBAN, DepthwiseBAN
 # NanoTrackV3
 # from nanotrack.models.head.ban_v3 import UPChannelBAN, DepthwiseBAN
 
+# RepHead, LightTrack
+# from nanotrack.models.head.RHead import UPChannelBAN, DepthwiseBAN
+
 BANS = {
         'UPChannelBAN': UPChannelBAN,
         'DepthwiseBAN': DepthwiseBAN

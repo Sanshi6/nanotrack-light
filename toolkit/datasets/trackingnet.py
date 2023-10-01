@@ -27,7 +27,7 @@ class TrackingNetVideo(Video):
     # def load_tracker(self, path, tracker_names=None):
     #     """
     #     Args:
-    #         path(str): path to result
+    #         path(str): path to Ray_result
     #         tracker_name(list): name of tracker
     #     """
     #     if not tracker_names:

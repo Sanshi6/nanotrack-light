@@ -29,5 +29,5 @@ class Dataset(object):
         self.tracker_path = path
         self.tracker_names = tracker_names
         # for video in tqdm(self.videos.values(), 
-        #         desc='loading tacker result', ncols=100):
+        #         desc='loading tacker Ray_result', ncols=100):
         #     video.load_tracker(path, tracker_names)

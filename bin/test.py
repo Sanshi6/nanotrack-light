@@ -13,10 +13,11 @@ import torch
 import numpy as np
 
 import sys
+sys.path.append(os.getcwd())
 
 from nanotrack.models.backbone.MobileOne import reparameterize_model
 
-sys.path.append(os.getcwd())
+
 
 from tqdm import tqdm
 
@@ -32,9 +33,9 @@ from bin.eval import eval
 
 parser = argparse.ArgumentParser(description='nanotrack')
 
-parser.add_argument('--dataset', default='VOT2018', type=str, help='datasets')
+parser.add_argument('--dataset', default='OTB100', type=str, help='datasets')
 
-parser.add_argument('--tracker_name', '-t', default='TESTR0', type=str, help='tracker name')
+parser.add_argument('--tracker_name', '-t', default='MobileOne', type=str, help='tracker name')
 
 parser.add_argument('--config', default='./models/config/Rep_config.yaml', type=str, help='config file')
 
@@ -44,11 +45,11 @@ parser.add_argument('--save_path', default='./results', type=str, help='snapshot
 
 parser.add_argument('--video', default='', type=str, help='eval one special video')
 
-parser.add_argument('--vis', action='store_true', help='whether v isualzie result')
+parser.add_argument('--vis', action='store_true', help='whether v isualzie Ray_result')
 
 parser.add_argument('--gpu_id', default='not_set', type=str, help="gpu id")
 
-parser.add_argument('--tracker_path', '-p', default='./results', type=str, help='tracker result path')
+parser.add_argument('--tracker_path', '-p', default='./results', type=str, help='tracker Ray_result path')
 
 parser.add_argument('--num', '-n', default=4, type=int, help='number of thread to eval')
 
@@ -84,14 +85,10 @@ def main():
     # load model 
     model = load_pretrain(model, args.snapshot).cuda().eval()
     model.backbone = reparameterize_model(model.backbone)
-    """
-    generate onnx file 
-    
-    
-    """
+
 
     # build tracker 
-    tracker = build_tracker(model)
+    tracker = build_tracker(model, cfg)
 
     # create dataset 
     dataset = DatasetFactory.create_dataset(name=args.dataset,

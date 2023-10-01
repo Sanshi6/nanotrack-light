@@ -86,7 +86,7 @@ def track_tune(tracker, net, video, config):
 
 
     start_frame, lost_times, toc = 0, 0, 0
-    regions = []  # result and states[1 init / 2 lost / 0 skip]
+    regions = []  # Ray_result and states[1 init / 2 lost / 0 skip]
     image_files, gt = video['image_files'], video['gt']
     for f, image_file in enumerate(image_files):
         im = cv2.imread(image_file)

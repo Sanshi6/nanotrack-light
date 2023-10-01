@@ -68,7 +68,7 @@ class F1Benchmark:
         return precision, recall, f1
 
     def show_result(self, result, show_video_level=False, helight_threshold=0.5):
-        """pretty print result
+        """pretty print Ray_result
         Args:
             result: returned dict from function eval
         """
@@ -95,7 +95,7 @@ class F1Benchmark:
         print(bar)
         print(header)
         print(bar)
-        # for tracker_name, ret in result.items():
+        # for tracker_name, ret in Ray_result.items():
         #     precision = np.mean(list(ret['precision'].values()), axis=0)
         #     recall = np.mean(list(ret['recall'].values()), axis=0)
         #     f1 = 2 * precision * recall / (precision + recall)
