@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import torch 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -13,8 +13,7 @@ import torch.nn.functional as F
 from nanotrack.models.loss import select_cross_entropy_loss, select_iou_loss
 from nanotrack.models.backbone import get_backbone
 from nanotrack.models.head import get_ban_head
-from nanotrack.models.neck import get_neck 
-
+from nanotrack.models.neck import get_neck
 
 # test
 from nanotrack.models.backbone.RLightTrack1 import mobileone
@@ -36,9 +35,7 @@ class ModelBuilder(nn.Module):
         # build ban head
         if cfg.BAN.BAN:
             self.ban_head = get_ban_head(cfg.BAN.TYPE,
-                                            **cfg.BAN.KWARGS)
-
-
+                                         **cfg.BAN.KWARGS)
 
     def template(self, z):
         zf = self.backbone(z)
@@ -51,9 +48,9 @@ class ModelBuilder(nn.Module):
         cls, loc = self.ban_head(self.zf, xf)
 
         return {
-                'cls': cls,
-                'loc': loc,
-               } 
+            'cls': cls,
+            'loc': loc,
+        }
 
     def log_softmax(self, cls):
 
@@ -62,14 +59,15 @@ class ModelBuilder(nn.Module):
 
             cls = F.log_softmax(cls, dim=3)
 
-        return cls 
+        return cls
 
-    #  forward
+        #  forward
+
     def forward(self, data):
         """ only used in training
         """
         # train mode
-        if len(data)>=4: 
+        if len(data) >= 4:
             template = data['template'].cuda()
             search = data['search'].cuda()
             label_cls = data['label_cls'].cuda()
@@ -77,33 +75,37 @@ class ModelBuilder(nn.Module):
 
             # get feature
             zf = self.backbone(template)
-            xf = self.backbone(search)    
+            xf = self.backbone(search)
+
+            # ban model
+            
+
+
 
             cls, loc = self.ban_head(zf, xf)
 
             # cls loss with cross entropy loss , TODO
             cls = self.log_softmax(cls)
 
-            cls_loss = select_cross_entropy_loss(cls, label_cls) 
+            cls_loss = select_cross_entropy_loss(cls, label_cls)
 
             # loc loss with iou loss
-            loc_loss = select_iou_loss(loc, label_loc, label_cls) 
-            outputs = {} 
+            loc_loss = select_iou_loss(loc, label_loc, label_cls)
+            outputs = {}
 
             outputs['total_loss'] = self.cfg.TRAIN.CLS_WEIGHT * cls_loss + self.cfg.TRAIN.LOC_WEIGHT * loc_loss
             outputs['cls_loss'] = cls_loss
             outputs['loc_loss'] = loc_loss
 
-            return outputs  
-        
-        # test speed 
-        else: 
-        
-            xf = self.backbone(data)  
-            cls, loc = self.ban_head(self.zf, xf) 
+            return outputs
+
+            # test speed
+        else:
+
+            xf = self.backbone(data)
+            cls, loc = self.ban_head(self.zf, xf)
 
             return {
-                    'cls': cls,
-                    'loc': loc,
-                }
-
+                'cls': cls,
+                'loc': loc,
+            }
