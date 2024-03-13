@@ -184,7 +184,9 @@ def fitness(config):
     # model build  -> pretrained model
     model = ModelBuilder(cfg)
     # print("enter.")
-    model = load_pretrain(model, args.snapshot).cuda().eval()
+    model = load_pretrain(model, args.snapshot)
+    model = model.cuda()
+    model = model.eval()
     model.backbone = reparameterize_model(model.backbone)
 
     # tracker builder

@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 # # NanoTrackV1
-from nanotrack.models.head.ban_v1 import UPChannelBAN, DepthwiseBAN
+from nanotrack.models.head.ban_v1 import UPChannelBAN, DepthwiseBAN, new_head
 
 # # NanoTrackV2
 # from nanotrack.models.head.ban_v2 import UPChannelBAN, DepthwiseBAN
@@ -17,7 +17,8 @@ from nanotrack.models.head.ban_v1 import UPChannelBAN, DepthwiseBAN
 
 BANS = {
         'UPChannelBAN': UPChannelBAN,
-        'DepthwiseBAN': DepthwiseBAN
+        'DepthwiseBAN': DepthwiseBAN,
+        'new_head': new_head,
        }
 
 

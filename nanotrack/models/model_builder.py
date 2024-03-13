@@ -17,6 +17,7 @@ from nanotrack.models.neck import get_neck
 
 # test
 from nanotrack.models.backbone.RLightTrack1 import mobileone
+from nanotrack.models.head.ban_v1 import multi_head
 
 
 class ModelBuilder(nn.Module):
@@ -36,6 +37,7 @@ class ModelBuilder(nn.Module):
         if cfg.BAN.BAN:
             self.ban_head = get_ban_head(cfg.BAN.TYPE,
                                          **cfg.BAN.KWARGS)
+            self.multi_head = multi_head()
 
     def template(self, z):
         zf = self.backbone(z)
@@ -78,11 +80,10 @@ class ModelBuilder(nn.Module):
             xf = self.backbone(search)
 
             # ban model
-            
+            cls, reg = self.multi_head(xf, zf)
+            cls, loc = self.ban_head(cls, reg)
 
-
-
-            cls, loc = self.ban_head(zf, xf)
+            # cls, loc = self.ban_head(zf, xf)
 
             # cls loss with cross entropy loss , TODO
             cls = self.log_softmax(cls)

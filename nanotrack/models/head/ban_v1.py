@@ -125,6 +125,212 @@ class PixelwiseXCorr(nn.Module):
         return corr
 
 
+class cls_tools(nn.Module):
+    def __init__(self):
+        super(cls_tools, self).__init__()
+        cls_tool = []
+
+        # 1 layer
+        cls_tool.append(nn.Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1, groups=1024, bias=False))
+        cls_tool.append(nn.Conv2d(1024, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        cls_tool.append(nn.BatchNorm2d(64))
+        cls_tool.append(nn.ReLU6(inplace=True))
+
+        # 2 layer
+        cls_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        cls_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        cls_tool.append(nn.BatchNorm2d(64))
+        cls_tool.append(nn.ReLU6(inplace=True))
+
+        # 3 layer
+        cls_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        cls_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        cls_tool.append(nn.BatchNorm2d(64))
+        cls_tool.append(nn.ReLU6(inplace=True))
+
+        # 4 layer
+        cls_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        cls_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        # cls_tool.append(nn.BatchNorm2d(128))
+        # cls_tool.append(nn.ReLU6(inplace=True))
+
+        self.add_module('cls_tool', nn.Sequential(*cls_tool))
+
+        for modules in self.cls_tool:
+            for m in modules.modules():
+                if isinstance(m, nn.Conv2d):
+                    n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                    m.weight.data.normal_(0, math.sqrt(2. / n))
+                    if m.bias is not None:
+                        m.bias.data.zero_()
+                elif isinstance(m, nn.BatchNorm2d):
+                    m.weight.data.fill_(1)
+                    m.bias.data.zero_()
+                elif isinstance(m, nn.Linear):
+                    m.weight.data.normal_(0, 0.01)
+                    m.bias.data.zero_()
+
+    def forward(self, x):
+        x = self.cls_tool(x)
+        return x
+
+
+class reg_tools(nn.Module):
+    def __init__(self):
+        super(reg_tools, self).__init__()
+        reg_tool = []
+
+        # 1 layer
+        reg_tool.append(nn.Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1, groups=1024, bias=False))
+        reg_tool.append(nn.Conv2d(1024, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        reg_tool.append(nn.BatchNorm2d(64))
+        reg_tool.append(nn.ReLU6(inplace=True))
+
+        # 2 layer
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        reg_tool.append(nn.BatchNorm2d(64))
+        reg_tool.append(nn.ReLU6(inplace=True))
+
+        # 3 layer
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        reg_tool.append(nn.BatchNorm2d(64))
+        reg_tool.append(nn.ReLU6(inplace=True))
+
+        # 4 layer
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        # reg_tool.append(nn.BatchNorm2d(128))
+        # reg_tool.append(nn.ReLU6(inplace=True))
+
+        self.add_module('reg_tool', nn.Sequential(*reg_tool))
+
+        for modules in self.reg_tool:
+            for m in modules.modules():
+                if isinstance(m, nn.Conv2d):
+                    n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                    m.weight.data.normal_(0, math.sqrt(2. / n))
+                    if m.bias is not None:
+                        m.bias.data.zero_()
+                elif isinstance(m, nn.BatchNorm2d):
+                    m.weight.data.fill_(1)
+                    m.bias.data.zero_()
+                elif isinstance(m, nn.Linear):
+                    m.weight.data.normal_(0, 0.01)
+                    m.bias.data.zero_()
+
+    def forward(self, x):
+        x = self.reg_tool(x)
+        return x
+
+
+class multi_head(nn.Module):
+    def __init__(self):
+        super(multi_head, self).__init__()
+        self.reg_tools = reg_tools()
+        self.cls_tools = cls_tools()
+        self.loc_adjust = nn.Conv2d(64, 64, kernel_size=1)
+
+    def forward(self, x, z):
+        x_reg = self.reg_tools(x)
+        z_reg = self.reg_tools(z)
+
+        x_cls = self.cls_tools(x)
+        z_cls = self.cls_tools(z)
+        cls = xcorr_pixelwise(x_cls, z_cls)
+        loc = xcorr_pixelwise(x_reg, z_reg)
+        # cls = xcorr_fast(x_cls, z_cls)
+        # loc = self.loc_adjust(xcorr_fast(x_reg, z_reg))
+        return cls, loc
+
+
+class new_head(nn.Module):
+    def __init__(self, in_channels=64, out_channels=64, weighted=False):
+        super(new_head, self).__init__()
+
+        cls_tower = []
+        bbox_tower = []
+
+        # ------------------------------------------------------cls-----------------------------------------------------#
+        # layer0
+        cls_tower.append(nn.Conv2d(64, 64, kernel_size=5, stride=1, padding=2, groups=64, bias=False))
+        cls_tower.append(nn.Conv2d(64, 128, kernel_size=1, stride=1, padding=0, bias=False))
+        cls_tower.append(nn.BatchNorm2d(128))
+        cls_tower.append(nn.ReLU6(inplace=True))
+
+        # layer1
+        cls_tower.append(nn.Conv2d(128, 128, kernel_size=5, stride=1, padding=2, groups=128, bias=False))
+        cls_tower.append(nn.Conv2d(128, 128, kernel_size=1, stride=1, padding=0, bias=False))
+        cls_tower.append(nn.BatchNorm2d(128))
+        cls_tower.append(nn.ReLU6(inplace=True))
+
+        # layer2
+        cls_tower.append(nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1, groups=128, bias=False))
+        cls_tower.append(nn.Conv2d(128, 128, kernel_size=1, stride=1, padding=0, bias=False))
+        cls_tower.append(nn.BatchNorm2d(128))
+        cls_tower.append(nn.ReLU6(inplace=True))
+
+        # ------------------------------------------------------bbox-----------------------------------------------------#
+        # layer0
+        bbox_tower.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=64, bias=False))
+        bbox_tower.append(nn.Conv2d(64, 96, kernel_size=1, stride=1, padding=0, bias=False))
+        bbox_tower.append(nn.BatchNorm2d(96))
+        bbox_tower.append(nn.ReLU6(inplace=True))
+
+        # layer1
+        bbox_tower.append(nn.Conv2d(96, 96, kernel_size=3, stride=1, padding=1, groups=96, bias=False))
+        bbox_tower.append(nn.Conv2d(96, 96, kernel_size=1, stride=1, padding=0, bias=False))
+        bbox_tower.append(nn.BatchNorm2d(96))
+        bbox_tower.append(nn.ReLU6(inplace=True))
+
+        # layer2
+        bbox_tower.append(nn.Conv2d(96, 96, kernel_size=5, stride=1, padding=2, groups=96, bias=False))
+        bbox_tower.append(nn.Conv2d(96, 96, kernel_size=1, stride=1, padding=0, bias=False))
+        bbox_tower.append(nn.BatchNorm2d(96))
+        bbox_tower.append(nn.ReLU6(inplace=True))
+
+        # layer3
+        bbox_tower.append(nn.Conv2d(96, 96, kernel_size=5, stride=1, padding=2, groups=96, bias=False))
+        bbox_tower.append(nn.Conv2d(96, 96, kernel_size=1, stride=1, padding=0, bias=False))
+        bbox_tower.append(nn.BatchNorm2d(96))
+        bbox_tower.append(nn.ReLU6(inplace=True))
+
+        self.add_module('cls_tower', nn.Sequential(*cls_tower))
+        self.add_module('bbox_tower', nn.Sequential(*bbox_tower))
+
+        self.cls_logits = nn.Sequential(
+            nn.Conv2d(128, 2, kernel_size=1, stride=1, padding=0),
+        )
+
+        self.bbox_pred = nn.Sequential(
+            nn.Conv2d(96, 4, kernel_size=1, stride=1, padding=0),
+        )
+        for modules in [self.cls_tower, self.bbox_tower,
+                        self.cls_logits, self.bbox_pred]:
+            for m in modules.modules():
+                if isinstance(m, nn.Conv2d):
+                    n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                    m.weight.data.normal_(0, math.sqrt(2. / n))
+                    if m.bias is not None:
+                        m.bias.data.zero_()
+                elif isinstance(m, nn.BatchNorm2d):
+                    m.weight.data.fill_(1)
+                    m.bias.data.zero_()
+                elif isinstance(m, nn.Linear):
+                    m.weight.data.normal_(0, 0.01)
+                    m.bias.data.zero_()
+
+    def forward(self, cls, reg):
+        cls_tower = self.cls_tower(cls)
+        logits = self.cls_logits(cls_tower)
+
+        bbox_tower = self.bbox_tower(reg)
+        bbox_reg = self.bbox_pred(bbox_tower)
+        bbox_reg = torch.exp(bbox_reg)
+        return logits, bbox_reg
+
+
 class DepthwiseBAN(BAN):
     def __init__(self, in_channels=64, out_channels=64, weighted=False):
         super(DepthwiseBAN, self).__init__()

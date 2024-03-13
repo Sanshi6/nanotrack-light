@@ -22,7 +22,7 @@ ADJUST:
 
 BAN:
     BAN: True
-    TYPE: 'DepthwiseBAN'
+    TYPE: 'new_head'                # 'DepthwiseBAN'
     KWARGS:
         in_channels:  64
         out_channels: 64
