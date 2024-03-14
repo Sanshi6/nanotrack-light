@@ -15,10 +15,14 @@ from nanotrack.models.head.ban_v1 import UPChannelBAN, DepthwiseBAN, new_head
 # RepHead, LightTrack
 # from nanotrack.models.head.RHead import UPChannelBAN, DepthwiseBAN
 
+from nanotrack.super_models.head.super_connect import head_supernet
+
+
 BANS = {
         'UPChannelBAN': UPChannelBAN,
         'DepthwiseBAN': DepthwiseBAN,
         'new_head': new_head,
+        'head_supernet': head_supernet,
        }
 
 

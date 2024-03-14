@@ -26,18 +26,19 @@ class ModelBuilder(nn.Module):
         self.cfg = cfg
 
         # build backbone
-        self.backbone = mobileone(inference_mode=False, variant='s0')
-        # self.backbone = get_backbone(cfg.BACKBONE.TYPE,
-        #                              **cfg.BACKBONE.KWARGS)
+        # self.backbone = mobileone(inference_mode=False, variant='s0')
+        self.backbone = get_backbone(cfg.BACKBONE.TYPE,
+                                     **cfg.BACKBONE.KWARGS)
         # build adjust layer
         if cfg.ADJUST.ADJUST:
             self.neck = get_neck(cfg.ADJUST.TYPE,
                                  **cfg.ADJUST.KWARGS)
+            # self.neck = multi_head()
+
         # build ban head
         if cfg.BAN.BAN:
             self.ban_head = get_ban_head(cfg.BAN.TYPE,
                                          **cfg.BAN.KWARGS)
-            self.multi_head = multi_head()
 
     def template(self, z):
         zf = self.backbone(z)
@@ -79,9 +80,12 @@ class ModelBuilder(nn.Module):
             zf = self.backbone(template)
             xf = self.backbone(search)
 
-            # ban model
-            cls, reg = self.multi_head(xf, zf)
-            cls, loc = self.ban_head(cls, reg)
+            if self.neck is not None:
+                # ban model
+                cls, reg = self.neck(xf, zf)
+
+            # cls, reg = self.multi_head(xf, zf)
+            cls, loc = self.ban_head(xf, zf)
 
             # cls, loc = self.ban_head(zf, xf)
 

@@ -56,3 +56,5 @@ def xcorr_pixelwise(x, kernel):  # z=kernel
     kernel_mat = kernel.view((b, c, -1)).transpose(1, 2)  # (b, hz * wz, c)
     x_mat = x.view((b, c, -1))  # (b, c, hx * wx)
     return torch.matmul(kernel_mat, x_mat).view((b, -1, h, w))  # (b, hz * wz, hx * wx) --> (b, hz * wz, hx, wx)
+
+        # 10/11      zhou er     shang wu

@@ -1,0 +1,102 @@
+META_ARC: "nanotrack"
+
+BACKBONE:
+    TYPE: 'supernet'
+#    KWARGS:
+#        width_mult: 1
+#        inference_mode: False
+#    PRETRAINED:
+#    PRETRAINED:  'snapshot/SuperNet.pth'
+    TRAIN_LAYERS: ['stage0', 'stage1', 'stage2', 'stage3', 'stage4']
+    TRAIN_EPOCH: 10             # delete last stage, or last stage in first epoch unfreeze，train it
+    LAYERS_LR: 0.1
+
+ADJUST:
+    ADJUST: False
+    TYPE: 'multi_neck'
+    KWARGS:
+        in_channels:  256
+        out_channels: 64
+
+BAN:
+    BAN: True
+    TYPE: 'DepthwiseBAN'                                # 'head_supernet' | 'DepthwiseBAN'
+    KWARGS:
+        channel_list: [96, 128, 256]
+        kernel_list: [3, 5, 7, 0]
+        inchannels: 64
+        towernum: 8
+        linear_reg: False
+        base_op_name: 'SeparableConv2d_BNReLU'
+
+
+CUDA: True
+
+POINT:
+    STRIDE: 16
+
+TRACK:
+    TYPE: 'NanoTracker'
+    WINDOW_INFLUENCE: 0.265
+    PENALTY_K: 0.01
+    LR: 0.2
+    EXEMPLAR_SIZE: 127
+    INSTANCE_SIZE: 255
+    BASE_SIZE:  7
+    CONTEXT_AMOUNT: 0.5
+
+TRAIN:
+    EPOCH: 50
+    START_EPOCH: 0
+    BATCH_SIZE: 32
+    NUM_WORKERS: 8
+    BASE_LR: 0.005
+    CLS_WEIGHT: 1.0
+    LOC_WEIGHT: 1.0
+    NUM_CONVS: 4
+    BASE_SIZE: 7                # todo
+    OUTPUT_SIZE: 16
+    RESUME: ''
+    PRETRAINED: ''
+    SNAPSHOT_DIR: './models/snapshot'
+
+    LR:
+        TYPE: 'log'
+        KWARGS:
+            start_lr: 0.005
+            end_lr: 0.0005
+    LR_WARMUP:
+        TYPE: 'step'
+        EPOCH: 5
+        KWARGS:
+            start_lr: 0.001
+            end_lr: 0.005
+            step: 1
+
+DATASET:
+    NAMES:
+    - 'GOT'
+#    - 'VID'
+#    - 'YOUTUBEBB'
+#    - 'COCO'
+#    - 'DET'
+#    - 'LASOT'
+
+    VIDEOS_PER_EPOCH: 600000
+
+    TEMPLATE:
+        SHIFT: 4
+        SCALE: 0.05
+        BLUR: 0.0
+        FLIP: 0.0
+        COLOR: 1.0
+
+    SEARCH:
+        SHIFT: 64
+        SCALE: 0.18
+        BLUR: 0.2
+        FLIP: 0.0
+        COLOR: 1.0
+
+    NEG: 0.2
+    GRAY: 0.0

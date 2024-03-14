@@ -181,8 +181,8 @@ class reg_tools(nn.Module):
         reg_tool = []
 
         # 1 layer
-        reg_tool.append(nn.Conv2d(1024, 1024, kernel_size=3, stride=1, padding=1, groups=1024, bias=False))
-        reg_tool.append(nn.Conv2d(1024, 64, kernel_size=1, stride=1, padding=0, bias=False))
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1, groups=1024, bias=False))
+        reg_tool.append(nn.Conv2d(64, 64, kernel_size=1, stride=1, padding=0, bias=False))
         reg_tool.append(nn.BatchNorm2d(64))
         reg_tool.append(nn.ReLU6(inplace=True))
 

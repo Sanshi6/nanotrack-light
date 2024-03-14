@@ -7,9 +7,10 @@ from __future__ import unicode_literals
 
 import logging
 
-import torch 
+import torch
 
 logger = logging.getLogger('global')
+
 
 def check_keys(model, pretrained_state_dict):
     ckpt_keys = set(pretrained_state_dict.keys())
@@ -33,6 +34,7 @@ def check_keys(model, pretrained_state_dict):
         'load NONE from pretrained checkpoint'
     return True
 
+
 def remove_prefix(state_dict, prefix):
     ''' Old style model is stored with all names of parameters
     share common prefix 'module.' '''
@@ -40,17 +42,18 @@ def remove_prefix(state_dict, prefix):
     f = lambda x: x.split(prefix, 1)[-1] if x.startswith(prefix) else x
     return {f(key): value for key, value in state_dict.items()}
 
+
 def load_pretrain(model, pretrained_path):
     logger.info('load pretrained model from {}'.format(pretrained_path))
-    
-    device = torch.device('cuda' if torch.cuda.is_available()  else 'cpu')
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     pretrained_dict = torch.load(pretrained_path,
-        map_location=lambda storage, loc: storage)
-    
-    #device = torch.cuda.current_device()
+                                 map_location=lambda storage, loc: storage)
+
+    # device = torch.cuda.current_device()
     # pretrained_dict = torch.load(pretrained_path,
     #     map_location=lambda storage, loc: storage.cuda(device))
-    
+
     if "state_dict" in pretrained_dict.keys():
         pretrained_dict = remove_prefix(pretrained_dict['state_dict'],
                                         'module.')
@@ -75,7 +78,7 @@ def load_pretrain(model, pretrained_path):
 def restore_from(model, optimizer, ckpt_path):
     device = torch.cuda.current_device()
     ckpt = torch.load(ckpt_path,
-        map_location=lambda storage, loc: storage.cuda(device))
+                      map_location=lambda storage, loc: storage.cuda(device))
     epoch = ckpt['epoch']
 
     ckpt_model_dict = remove_prefix(ckpt['state_dict'], 'module.')

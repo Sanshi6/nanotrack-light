@@ -10,13 +10,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from nanotrack.models.neck.neck import AdjustLayer, AdjustAllLayer
-from nanotrack.super_models.neck.neck import multi_neck
-
 
 NECKS = {
     'AdjustLayer': AdjustLayer,
-    'AdjustAllLayer': AdjustAllLayer,
-    'multi_neck': multi_neck,
+    'AdjustAllLayer': AdjustAllLayer
 }
 
 
