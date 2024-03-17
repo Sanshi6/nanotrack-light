@@ -27,21 +27,24 @@ from nanotrack.utils.lr_scheduler import build_lr_scheduler
 from nanotrack.utils.log_helper import init_log, print_speed, add_file_handler
 from nanotrack.utils.distributed import new_dist_init, DistModule, reduce_gradients, average_reduce, get_rank, \
     get_world_size
-from nanotrack.utils.model_load import load_pretrain, restore_from
+from nanotrack.utils.model_load import restore_from, load_pretrain
+from nanotrack.utils.utils import load_pretrain_backbone
 from nanotrack.utils.average_meter import AverageMeter
 from nanotrack.utils.misc import describe, commit
 from nanotrack.models.model_builder import ModelBuilder
 from nanotrack.datasets.dataset import BANDataset
 from nanotrack.core.config import cfg
-from nanotrack.models.backbone.MobileOne import _initialize_weights
 
 
 import sys
+
+from nanotrack.utils.utils import initialize_weights
+
 sys.path.append(os.getcwd())
 
 logger = logging.getLogger('global')
 parser = argparse.ArgumentParser(description='nanotrack')
-parser.add_argument('--cfg', type=str, default='./models/config/SuperNet.yaml', help='configuration of tracking')
+parser.add_argument('--cfg', type=str, default='models/config/SubNet.yaml', help='configuration of tracking')
 parser.add_argument('--seed', type=int, default=123456, help='random seed')
 parser.add_argument('--local_rank', type=int, default=0, help='compulsory for pytorch launcer')
 args = parser.parse_args()
@@ -186,8 +189,6 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
     for idx, data in enumerate(train_loader):
         # todo: update path
 
-
-
         if epoch != idx // num_per_epoch + start_epoch:
             epoch = idx // num_per_epoch + start_epoch
 
@@ -233,7 +234,7 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
                 log_grads(model.module, tb_writer, tb_idx)
 
             # clip gradient
-            # clip_grad_norm_(model.parameters(), cfg.TRAIN.GRAD_CLIP)
+            clip_grad_norm_(model.parameters(), cfg.TRAIN.GRAD_CLIP)
             optimizer.step()
 
         batch_time = time.time() - end
@@ -287,14 +288,15 @@ def main():
         logger.info("config \n{}".format(json.dumps(cfg, indent=4)))
 
     model = ModelBuilder(cfg).cuda().train()
-    _initialize_weights(model)
+
+    initialize_weights(model)
 
     logger.info(model)
 
     if cfg.BACKBONE.PRETRAINED:
         cur_path = os.path.dirname(os.path.realpath(__file__))
         backbone_path = os.path.join(cur_path, '../', cfg.BACKBONE.PRETRAINED)
-        load_pretrain(model.backbone, backbone_path)
+        model.backbone = load_pretrain_backbone(model.backbone, backbone_path)
 
     if rank == 0 and cfg.TRAIN.LOG_DIR:
         tb_writer = SummaryWriter(cfg.TRAIN.LOG_DIR)

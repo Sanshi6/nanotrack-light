@@ -9,7 +9,6 @@ sys.path.append(os.getcwd())
 from nanotrack.core.config import cfg
 from nanotrack.models.model_builder import ModelBuilder
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-from nanotrack.models.backbone.MobileOne import reparameterize_model
 from thop import profile
 from thop.utils import clever_format
 

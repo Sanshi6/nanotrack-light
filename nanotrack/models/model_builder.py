@@ -26,16 +26,19 @@ class ModelBuilder(nn.Module):
         self.cfg = cfg
 
         # build backbone
+        self.backbone = None
         # self.backbone = mobileone(inference_mode=False, variant='s0')
         self.backbone = get_backbone(cfg.BACKBONE.TYPE,
                                      **cfg.BACKBONE.KWARGS)
         # build adjust layer
+        self.neck = None
         if cfg.ADJUST.ADJUST:
             self.neck = get_neck(cfg.ADJUST.TYPE,
                                  **cfg.ADJUST.KWARGS)
             # self.neck = multi_head()
 
         # build ban head
+        self.ban_head = None
         if cfg.BAN.BAN:
             self.ban_head = get_ban_head(cfg.BAN.TYPE,
                                          **cfg.BAN.KWARGS)

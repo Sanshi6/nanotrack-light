@@ -12,7 +12,6 @@ import numpy as np
 
 import sys
 
-from nanotrack.models.backbone.MobileOne import reparameterize_model
 
 sys.path.append(os.getcwd())
 

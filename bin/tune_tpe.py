@@ -23,7 +23,6 @@ from nanotrack.tracker.tracker_builder import build_tracker
 from nanotrack.utils.bbox import get_axis_aligned_bbox
 from nanotrack.utils.model_load import load_pretrain
 from nanotrack.core.config import cfg
-from nanotrack.models.backbone.MobileOne import reparameterize_model
 
 # os library
 import os

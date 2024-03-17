@@ -9,3 +9,8 @@ logs/*
 *.pth
 *.bin
 *.onnx
+data/
+datasets/
+results/
+*.param
+*.pth
