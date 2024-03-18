@@ -53,8 +53,8 @@ TRAIN:
     LR:
         TYPE: 'log'
         KWARGS:
-            start_lr: 0.005
-            end_lr: 0.0005
+            start_lr: 0.01     # 0.005
+            end_lr: 0.001      # 0.0005
     LR_WARMUP:
         TYPE: 'step'
         EPOCH: 5
@@ -72,7 +72,7 @@ DATASET:
 #    - 'DET'
 #    - 'LASOT'
 
-    VIDEOS_PER_EPOCH: 600000 # 600000
+    VIDEOS_PER_EPOCH: 2400000 # 2400000 # 600000
 
     TEMPLATE:
         SHIFT: 4

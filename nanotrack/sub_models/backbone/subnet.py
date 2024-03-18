@@ -344,6 +344,8 @@ class SubNet(nn.Module):
                                        last_use_act=False)
         self.stage = [self.stage0, self.stage1, self.stage2, self.stage3, self.stage4]
 
+        self.train_num = 0
+
     def _make_stage(self, stride, num_blocks, out_channels, use_act=True, last_use_act=True, architecture=None):
 
         strides = [stride] + [1] * (num_blocks - 1)
@@ -380,8 +382,11 @@ class SubNet(nn.Module):
         unfix gradually as paper said
         """
         eps = 0.0001
-
-        if abs(ratio - 0.1) < eps:
+        if abs(ratio - 0.0) < eps:
+            self.train_num = 0  # epoch5 2*[1,3,1]
+            self.unlock()
+            return True
+        elif abs(ratio - 0.1) < eps:
             self.train_num = 2  # epoch5 2*[1,3,1]
             self.unlock()
             return True
@@ -393,11 +398,11 @@ class SubNet(nn.Module):
             self.train_num = 4  # epoch15 4*[1,3,1]  stride2pool makes stage2 have a more index
             self.unlock()
             return True
-        elif abs(ratio - 0.4) < eps:
+        elif abs(ratio - 0.5) < eps:
             self.train_num = 5  # epoch30 6*[1,3,1]
             self.unlock()
             return True
-        elif abs(ratio - 0.5) < eps:
+        elif abs(ratio - 0.7) < eps:
             self.train_num = 6  # epoch35 7*[1,3,1]
             self.unlock()
             return True
