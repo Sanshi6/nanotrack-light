@@ -344,7 +344,6 @@ class SubNet(nn.Module):
                                        last_use_act=False)
         self.stage = [self.stage0, self.stage1, self.stage2, self.stage3, self.stage4]
 
-
     def _make_stage(self, stride, num_blocks, out_channels, use_act=True, last_use_act=True, architecture=None):
 
         strides = [stride] + [1] * (num_blocks - 1)
@@ -374,8 +373,81 @@ class SubNet(nn.Module):
 
     def forward(self, x):
         x = self.forward_features(x)
-
         return x
+
+    def unfix(self, ratio):
+        """
+        unfix gradually as paper said
+        """
+        eps = 0.0001
+
+        if abs(ratio - 0.1) < eps:
+            self.train_num = 2  # epoch5 2*[1,3,1]
+            self.unlock()
+            return True
+        elif abs(ratio - 0.2) < eps:
+            self.train_num = 3  # epoch5 2*[1,3,1]
+            self.unlock()
+            return True
+        elif abs(ratio - 0.3) < eps:
+            self.train_num = 4  # epoch15 4*[1,3,1]  stride2pool makes stage2 have a more index
+            self.unlock()
+            return True
+        elif abs(ratio - 0.4) < eps:
+            self.train_num = 5  # epoch30 6*[1,3,1]
+            self.unlock()
+            return True
+        elif abs(ratio - 0.5) < eps:
+            self.train_num = 6  # epoch35 7*[1,3,1]
+            self.unlock()
+            return True
+
+        return False
+
+    def unlock(self):
+        for p in self.parameters():
+            p.requires_grad = False
+        # 02860
+        for i in range(1, self.train_num):  # zzp pay attention here
+            if i <= 1:
+                m = self.stage4
+            elif i <= 2:
+                m = self.stage3
+            elif i <= 3:
+                m = self.stage2
+            elif i <= 4:
+                m = self.stage1
+            elif i <= 5:
+                m = self.stage0
+            else:
+                m = self
+
+            for p in m.parameters():
+                p.requires_grad = True
+
+        self.eval()
+        self.train()
+
+    def train(self, mode=True):
+        self.training = mode
+        if not mode:
+            super(SubNet, self).train(False)
+        else:
+            for i in range(self.train_num):  # zzp pay attention here
+                if i <= 1:
+                    m = self.stage4
+                elif i <= 2:
+                    m = self.stage3
+                elif i <= 3:
+                    m = self.stage2
+                elif i <= 4:
+                    m = self.stage1
+                elif i <= 5:
+                    m = self.stage0
+
+                m.train(mode)
+
+        return self
 
 
 from ptflops import get_model_complexity_info
@@ -388,21 +460,27 @@ from torchstat import stat
 
 if __name__ == '__main__':
     net = SubNet()
-    print(net)
-    # 加载模型
-    net = load_pretrain_backbone(net, 'snapshot/mobileone_epoch50.pth')
-    net.eval()
-    x = torch.randn(1, 3, 255, 255)
-    x1 = net(x)
-    # print(x.shape)
-    net = reparameterize_model(net)
-    x2 = net(x)
-    # summary(net, (3, 255, 255), device='cpu')
-    print('========================== The diff is', ((x2 - x1) ** 2).sum())
-    stat(net, (3, 255, 255))
+    net.unfix(0.5)
 
-    summary(net, (3, 255, 255), device='cpu')
-    macs, params = get_model_complexity_info(net, (3, 255, 255), as_strings=True, print_per_layer_stat=False,
-                                             verbose=True)
-    print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
-    print('{:<30}  {:<8}'.format('Number of parameters: ', params))
+    for name, param in net.named_parameters():
+        if param.requires_grad:
+            print(name)
+
+    # print(net)
+    # # 加载模型
+    # net = load_pretrain_backbone(net, 'snapshot/mobileone_epoch50.pth')
+    # net.eval()
+    # x = torch.randn(1, 3, 255, 255)
+    # x1 = net(x)
+    # # print(x.shape)
+    # net = reparameterize_model(net)
+    # x2 = net(x)
+    # # summary(net, (3, 255, 255), device='cpu')
+    # print('========================== The diff is', ((x2 - x1) ** 2).sum())
+    # stat(net, (3, 255, 255))
+    #
+    # summary(net, (3, 255, 255), device='cpu')
+    # macs, params = get_model_complexity_info(net, (3, 255, 255), as_strings=True, print_per_layer_stat=False,
+    #                                          verbose=True)
+    # print('{:<30}  {:<8}'.format('Computational complexity: ', macs))
+    # print('{:<30}  {:<8}'.format('Number of parameters: ', params))

@@ -35,7 +35,6 @@ from nanotrack.models.model_builder import ModelBuilder
 from nanotrack.datasets.dataset import BANDataset
 from nanotrack.core.config import cfg
 
-
 import sys
 
 from nanotrack.utils.utils import initialize_weights
@@ -80,26 +79,28 @@ def build_data_loader():
 
 # backbone for train
 def build_opt_lr(model, current_epoch=0):
-    # backbone train process
-    for param in model.backbone.parameters():
-        param.requires_grad = False
-    for m in model.backbone.modules():
-        if isinstance(m, nn.BatchNorm2d):
-            m.eval()
-    if current_epoch >= cfg.BACKBONE.TRAIN_EPOCH:
-        for layer in cfg.BACKBONE.TRAIN_LAYERS:
-            for param in getattr(model.backbone, layer).parameters():
-                param.requires_grad = True
-            for m in getattr(model.backbone, layer).modules():
-                if isinstance(m, nn.BatchNorm2d):
-                    m.train()
+    # # backbone train process
+    # for param in model.backbone.parameters():
+    #     param.requires_grad = False
+    # for m in model.backbone.modules():
+    #     if isinstance(m, nn.BatchNorm2d):
+    #         m.eval()
+    # if current_epoch >= cfg.BACKBONE.TRAIN_EPOCH:
+    #     for layer in cfg.BACKBONE.TRAIN_LAYERS:
+    #         for param in getattr(model.backbone, layer).parameters():
+    #             param.requires_grad = True
+    #         for m in getattr(model.backbone, layer).modules():
+    #             if isinstance(m, nn.BatchNorm2d):
+    #                 m.train()
+    #
+    # # for MobileOne, train last stage.
+    # for param in getattr(model.backbone, 'stage4').parameters():
+    #     param.requires_grad = True
+    # for m in getattr(model.backbone, 'stage4').modules():
+    #     if isinstance(m, nn.BatchNorm2d):
+    #         m.train()
 
-    # for MobileOne, train last stage.
-    for param in getattr(model.backbone, 'stage4').parameters():
-        param.requires_grad = True
-    for m in getattr(model.backbone, 'stage4').modules():
-        if isinstance(m, nn.BatchNorm2d):
-            m.train()
+    model.backbone.unfix(current_epoch / cfg.BACKBONE.TRAIN_EPOCH)
 
     # trainable parameters
     trainable_params = []
@@ -202,10 +203,12 @@ def train(train_loader, model, optimizer, lr_scheduler, tb_writer):
             if epoch == cfg.TRAIN.EPOCH:
                 return
 
-            if cfg.BACKBONE.TRAIN_EPOCH == epoch:
-                logger.info('start training backbone.')
-                optimizer, lr_scheduler = build_opt_lr(model.module, epoch)
-                logger.info("model\n{}".format(describe(model.module)))
+            optimizer, lr_scheduler = build_opt_lr(model.module, epoch)
+
+            # if cfg.BACKBONE.TRAIN_EPOCH == epoch:
+            #     logger.info('start training backbone.')
+            #     optimizer, lr_scheduler = build_opt_lr(model.module, epoch)
+            #     logger.info("model\n{}".format(describe(model.module)))
 
             lr_scheduler.step(epoch)
             cur_lr = lr_scheduler.get_cur_lr()
