@@ -10,7 +10,7 @@ logs/*
 *.bin
 *.onnx
 data/
-datasets/
+dataset/
 results/
 *.param
 *.pth
