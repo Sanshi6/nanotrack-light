@@ -25,7 +25,7 @@ def main():
     checkpoints = [f"snapshot/checkpoint_e{i}.pth" for i in range(5, 51)]
 
     # 最大并发进程数
-    max_processes = 6
+    max_processes = 12
 
     # 创建一个进程池
     with Pool(processes=max_processes) as pool:
