@@ -7,7 +7,7 @@ def evaluate_model(checkpoint_path):
     # 调用subprocess运行外部命令，运行模型评估
     print(checkpoint_path)
 
-    command = f"python tools/test.py --snapshot {checkpoint_path} --config models/config/SubNet.yaml --dataset OTB100"
+    command = f"python bin/test.py --snapshot {checkpoint_path} --config models/config/SubNet.yaml --dataset OTB100 -c"
     result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     if result.returncode != 0:  # 非零返回码通常表示发生了错误
         print(f"error： {command}")
