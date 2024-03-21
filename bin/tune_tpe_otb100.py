@@ -186,8 +186,7 @@ def fitness(config):
     model = ModelBuilder(cfg)
     # print("enter.")
     model = load_pretrain(model, args.snapshot)
-    model = model.cuda()
-    model = model.eval()
+    model = model.cuda().eval()
     model.backbone = reparameterize_model(model.backbone)
 
     # tracker builder
@@ -195,7 +194,7 @@ def fitness(config):
 
     # dataset build
     info.dataset = args.dataset
-    info.datasetPath = os.path.join('E:/SiamProject/NanoTrack', 'datasets', info.dataset)
+    info.datasetPath = os.path.join('/home/ubuntu/yl/CapstoneProject/nanotrack-light', 'datasets', info.dataset)
     dataset = DatasetFactory.create_dataset(name=info.dataset, dataset_root=info.datasetPath, load_img=False)
     print('pretrained model has been loaded')
     # print(os.environ['CUDA_VISIBLE_DEVICES'])
@@ -204,14 +203,12 @@ def fitness(config):
     # tracker = build_tracker(model, cfg)
     cfgs = Cfgs()
     cfgs.dataset = "OTB100"
-    cfgs.tracker_path = r"E:/SiamProject/NanoTrack/results"
+    cfgs.tracker_path = r"/home/ubuntu/yl/CapstoneProject/nanotrack-light/results/Ray_result"
     trial_id = ray.train.get_context().get_trial_id()         # for ubuntu
     cfgs.tracker_name = str(trial_id)
     # "p_{:.3f}_s_{:.3f}_w_{:.3f}".format(config['scale_lr'], config['scale_lr'],
     #                                                         config['window_influence'])
-    cfgs.save_path = r"E:/SiamProject/NanoTrack/results"
-
-    # TODO: config -> tracker -> return eao value, refer test.py
+    cfgs.save_path = r"/home/ubuntu/yl/CapstoneProject/nanotrack-light/results/Ray_result"
 
     eao = test(tracker, cfgs, dataset)
     print(
@@ -229,7 +226,7 @@ if __name__ == "__main__":
         "window_influence": tune.quniform(0.001, 0.8, 0.001),
     }
 
-    tuner = tune.Tuner(fitness, param_space=params,
+    tuner = tune.Tuner(tune.with_resources(fitness, {"gpu": 0.25, "cpu": 4}), param_space=params,
                        run_config=RunConfig(name="my_tune_run", storage_path="/home/ubuntu/yl/CapstoneProject/nanotrack-light/results/Ray_result", ),
                        tune_config=TuneConfig(num_samples=800, mode='max', metric='eao',
                                               max_concurrent_trials=8, search_alg=OptunaSearch()))
