@@ -254,13 +254,13 @@ def eval(args):
 # --tracker_name  'checkpoint*' 
 
 if __name__ == '__main__':
-    tracker_name = 'nanotrack'
-    # tracker_name = 'NanoTrack'
+    # tracker_name = 'checkpoint'
+    tracker_name = 'MobileOne'
 
     dataset = 'OTB100'
 
     parser = argparse.ArgumentParser(description='tracking evaluation')
-    parser.add_argument('--tracker_path', '-p', default='E:/SiamProject/NanoTrack/results', type=str,
+    parser.add_argument('--tracker_path', '-p', default='results', type=str,
                         help='tracker Ray_result path')
     parser.add_argument('--dataset', '-d', default=dataset, type=str,
                         help='dataset name')
