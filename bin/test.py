@@ -37,7 +37,7 @@ parser = argparse.ArgumentParser(description='nanotrack')
 
 parser.add_argument('--dataset', default='OTB100', type=str, help='datasets')
 
-parser.add_argument('--tracker_name', '-t', default='MobileOne', type=str, help='tracker name')
+parser.add_argument('--tracker_name', '-t', default='MobileTrack', type=str, help='tracker name')
 
 parser.add_argument('--config', default='models/config/SubNet.yaml', type=str, help='config file')
 
@@ -56,6 +56,9 @@ parser.add_argument('--tracker_path', '-p', default='./results', type=str, help=
 parser.add_argument('--num', '-n', default=4, type=int, help='number of thread to eval')
 
 parser.add_argument('--show_video_level', '-s', dest='show_video_level', action='store_true')
+
+parser.add_argument('--checkpoint', '-c', dest='checkpoint', action='store_true')
+
 
 parser.set_defaults(show_video_level=False)
 
@@ -250,7 +253,14 @@ def main():
                     for x in track_times:
                         f.write("{:.6f}\n".format(x))
             else:
-                model_path = os.path.join(args.save_path, args.dataset, args.tracker_name)
+                # for checkpoint
+                if args.checkpoint:
+                    filename = args.snapshot.split('/')[-1]  # 获取路径中的文件名部分
+                    checkpoint = filename.split('.')[0]  # 获取文件名中的检查点部分
+                    model_path = os.path.join(args.save_path, args.dataset, args.tracker_name, checkpoint)
+                else:
+                    model_path = os.path.join(args.save_path, args.dataset, args.tracker_name)
+
                 if not os.path.isdir(model_path):
                     os.makedirs(model_path)
                 result_path = os.path.join(model_path, '{}.txt'.format(video.name))
