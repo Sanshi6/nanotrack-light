@@ -8,6 +8,7 @@ from __future__ import unicode_literals
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import time
 
 # from nanotrack.core.config import cfg
 from nanotrack.models.loss import select_cross_entropy_loss, select_iou_loss
@@ -27,7 +28,6 @@ class ModelBuilder(nn.Module):
 
         # build backbone
         self.backbone = None
-        # self.backbone = mobileone(inference_mode=False, variant='s0')
         self.backbone = get_backbone(cfg.BACKBONE.TYPE,
                                      **cfg.BACKBONE.KWARGS)
         # build adjust layer
@@ -35,7 +35,6 @@ class ModelBuilder(nn.Module):
         if cfg.ADJUST.ADJUST:
             self.neck = get_neck(cfg.ADJUST.TYPE,
                                  **cfg.ADJUST.KWARGS)
-            # self.neck = multi_head()
 
         # build ban head
         self.ban_head = None
@@ -88,7 +87,7 @@ class ModelBuilder(nn.Module):
                 cls, reg = self.neck(xf, zf)
 
             # cls, reg = self.multi_head(xf, zf)
-            cls, loc = self.ban_head(xf, zf)
+            cls, loc = self.ban_head(zf, xf)
 
             # cls, loc = self.ban_head(zf, xf)
 
@@ -117,3 +116,39 @@ class ModelBuilder(nn.Module):
                 'cls': cls,
                 'loc': loc,
             }
+
+
+class ModelBuilder_trt(nn.Module):
+    def __init__(self, cfg):
+        super(ModelBuilder_trt, self).__init__()
+        self.cfg = cfg
+
+        self.inference_time = 0
+        self.calls = 0
+
+        # build backbone
+        self.backbone_255 = None
+        self.backbone_127 = None
+
+        # build ban head
+        self.ban_head = None
+
+    def template(self, z):
+        self.zf = self.backbone_127(z)
+
+    def track(self, x):
+        start_time = time.time()
+
+        xf = self.backbone_255(x)
+        cls, loc = self.ban_head(self.zf, xf)
+
+        self.inference_time += time.time() - start_time
+        self.calls += 1
+
+        print("average time = ", self.inference_time / self.calls)
+
+        return {
+            'cls': cls,
+            'loc': loc,
+        }
+

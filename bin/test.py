@@ -13,6 +13,9 @@ import torch
 import numpy as np
 
 import sys
+
+from nanotrack.models.backbone.RLightTrack1 import reparameterize_model
+
 sys.path.append(os.getcwd())
 
 
@@ -36,9 +39,9 @@ parser.add_argument('--dataset', default='OTB100', type=str, help='datasets')
 
 parser.add_argument('--tracker_name', '-t', default='MobileOne', type=str, help='tracker name')
 
-parser.add_argument('--config', default='./models/config/Rep_config.yaml', type=str, help='config file')
+parser.add_argument('--config', default='models/config/SubNet.yaml', type=str, help='config file')
 
-parser.add_argument('--snapshot', default='models/snapshot/test.pth', type=str, help='snapshot of models to eval')
+parser.add_argument('--snapshot', default='snapshot/checkpoint_e38.pth', type=str, help='snapshot of models to eval')
 
 parser.add_argument('--save_path', default='./results', type=str, help='snapshot of models to eval')
 
@@ -82,9 +85,8 @@ def main():
     model = ModelBuilder(cfg)
 
     # load model 
-    model = load_pretrain(model, args.snapshot).cuda().eval()
+    model = load_pretrain(model, args.snapshot).eval().cuda()
     model.backbone = reparameterize_model(model.backbone)
-
 
     # build tracker 
     tracker = build_tracker(model, cfg)
@@ -255,6 +257,7 @@ def main():
                 with open(result_path, 'w') as f:
                     for x in pred_bboxes:
                         f.write(','.join([str(i) for i in x]) + '\n')
+
     eval(args)
 
 

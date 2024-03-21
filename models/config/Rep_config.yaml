@@ -1,16 +1,13 @@
 META_ARC: "nanotrack"
 
 BACKBONE:
-    TYPE: 'mobileone'  # mobileone  AlexNet  MobileRepV3
+    TYPE: 'mobileone'
     KWARGS:
-#        width_mult: 1
         inference_mode: False
-#    PRETRAINED:
     PRETRAINED:  'models/pretrained/mobileone_s0_unfused.pth.tar'
-    TRAIN_LAYERS: ['stage0', 'stage1', 'stage2', 'stage3', 'stage4']   # ['stage0', 'features', 'stage1']# ['MobileRepV3Block']  # 'stage0', 'stage1', 'stage2', 'stage3', 'stage4'
-#    TRAIN_LAYERS: ['layer1', 'layer2', 'layer3', 'layer4', 'layer5']
+    TRAIN_LAYERS: ['stage0', 'stage1', 'stage2', 'stage3', 'stage4']
 
-    TRAIN_EPOCH: 10             # delete last stage, or last stage in first epoch unfreeze，train it
+    TRAIN_EPOCH: 10
     LAYERS_LR: 0.1
 
 ADJUST:
@@ -22,7 +19,7 @@ ADJUST:
 
 BAN:
     BAN: True
-    TYPE: 'new_head'                # 'DepthwiseBAN'
+    TYPE: 'DepthwiseBAN'                # 'DepthwiseBAN' new_head
     KWARGS:
         in_channels:  64
         out_channels: 64

@@ -242,7 +242,7 @@ class sub_connect(nn.Module):
         self.cand_tower_reg = nn.Sequential(*self.cand_tower_reg)
         self.cand_head_reg = nn.Sequential(*self.cand_head_reg)
 
-    def forward(self, x_f, z_f):
+    def forward(self, z_f, x_f):
         x_cls_reg = self.corr_pw(z_f, x_f)
         # cls
         cls_feat = self.cand_tower_cls(x_cls_reg)
