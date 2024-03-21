@@ -15,6 +15,7 @@ from ray.tune.search.ax import AxSearch
 from hyperopt import hp
 from pprint import pprint
 
+from nanotrack.sub_models.backbone.subnet import reparameterize_model
 # model library
 from toolkit.datasets import DatasetFactory
 from toolkit.utils.region import vot_overlap, vot_float2str
@@ -125,8 +126,8 @@ def test(tracker, cfgs, dataset):
                 # scores.append(outputs['best_score'])
             toc += cv2.getTickCount() - tic
             track_times.append((cv2.getTickCount() - tic) / cv2.getTickFrequency())
-            if idx == 0:
-                cv2.destroyAllWindows()
+            # if idx == 0:
+            #     cv2.destroyAllWindows()
             # if args.vis and idx > 0:
             #     gt_bbox = list(map(int, gt_bbox))
             #     pred_bbox = list(map(int, pred_bbox))
@@ -136,7 +137,7 @@ def test(tracker, cfgs, dataset):
             #                   (pred_bbox[0] + pred_bbox[2], pred_bbox[1] + pred_bbox[3]), (0, 255, 255), 3)
             #     cv2.putText(img, str(idx), (40, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 255), 2)
             #     cv2.imshow(video.name, img)
-                cv2.waitKey(1)
+            #     cv2.waitKey(1)
         toc /= cv2.getTickFrequency()
 
         # save results
@@ -204,8 +205,10 @@ def fitness(config):
     cfgs = Cfgs()
     cfgs.dataset = "OTB100"
     cfgs.tracker_path = r"E:/SiamProject/NanoTrack/results"
-    cfgs.tracker_name = "p_{:.3f}_s_{:.3f}_w_{:.3f}".format(config['scale_lr'], config['scale_lr'],
-                                                            config['window_influence'])
+    trial_id = ray.train.get_context().get_trial_id()         # for ubuntu
+    cfgs.tracker_name = str(trial_id)
+    # "p_{:.3f}_s_{:.3f}_w_{:.3f}".format(config['scale_lr'], config['scale_lr'],
+    #                                                         config['window_influence'])
     cfgs.save_path = r"E:/SiamProject/NanoTrack/results"
 
     # TODO: config -> tracker -> return eao value, refer test.py
