@@ -80,8 +80,7 @@ class SiameseTracker(BaseTracker):
             im_patch = te_im[int(context_ymin):int(context_ymax + 1),
                              int(context_xmin):int(context_xmax + 1), :]
         else:
-            im_patch = im[int(context_ymin):int(context_ymax + 1),
-                          int(context_xmin):int(context_xmax + 1), :]
+            im_patch = im[int(context_ymin):int(context_ymax + 1), int(context_xmin):int(context_xmax + 1), :]
 
         if not np.array_equal(model_sz, original_sz):
             im_patch = cv2.resize(im_patch, (model_sz, model_sz))

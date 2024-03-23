@@ -3,6 +3,7 @@ from timm.models import SelectAdaptivePool2d
 import torch
 import numpy as np
 from nanotrack.super_models.backbone.mobileblock import MobileTrackBlock, reparameterize_model, MobileOneBlock
+from nanotrack.super_models.head.super_connect import PixelwiseXCorr
 
 
 def forward_hook_fn(
@@ -34,10 +35,11 @@ class SuperNet(nn.Module):
         self.global_pool = SelectAdaptivePool2d(pool_type='avg')
         self.classifier = nn.Linear(1280 * self.global_pool.feat_mult(), 1000)
         self.act = nn.ReLU()
-        self.globalpool = nn.AvgPool2d(7)
-        self.dropout = nn.Dropout(0.1)
-        self.classifier = nn.Sequential(
-            nn.Linear(1280, 1000, bias=False))
+
+        # self.globalpool = nn.AvgPool2d(7)
+        # self.dropout = nn.Dropout(0.1)
+        # self.classifier = nn.Sequential(
+        #     nn.Linear(1280, 1000, bias=False))
 
         self._get_path_back()  # update self.architecture
 
@@ -131,35 +133,35 @@ class SuperNet(nn.Module):
     def forward_features(self, x):
         # architecture = [[0], [], [], [], [], [0]]
         # assert (len(self.blocks == len(architecture)))  # avoid bugs
+        stride8_out = None
         for layer, layer_arch in zip(self.stage, self.architecture):
             # assert (len(layer) == len(layer_arch))  # avoid bugs
             # for blocks, arch in zip(layer, layer_arch):
+
             for i in range(len(layer)):
                 blocks = layer[i]
                 arch = layer_arch[i]
-
                 x = blocks[arch](x)
-
                 if len(layer_arch) is self.block_num[2] and arch != 3:
                     stride8_out = x
 
                 if len(layer_arch) == self.block_num[2]:
                     x = self.act(x)
-        return x
+        return stride8_out, x
 
     def forward(self, x):
         # x = self.forward_features(x)
         # x = self.global_pool(x)
         # x = x.flatten(1)
         # return self.classifier(x)
-        x = self.forward_features(x)
+        stride8_out, stride16_out = self.forward_features(x)
 
         # x = self.globalpool(x)
         #
         # x = self.dropout(x)
         # x = x.contiguous().view(-1, 1280)
         # x = self.classifier(x)
-        return x
+        return stride8_out, stride16_out
 
 
 import math
@@ -193,8 +195,36 @@ def get_path_back():
     return new_path_back
 
 
+class FeatureFusion(nn.Module):
+    def __init__(self, in_channels_stride_8=256, in_channels_stride_16=64, out_channels=64):
+        super(FeatureFusion, self).__init__()
+        self.down_sample_stride_8 = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.conv1x1_stride_8 = nn.Conv2d(in_channels_stride_8, out_channels, kernel_size=1)
+        # self.conv1x1_stride_16 = nn.Conv2d(in_channels_stride_16, out_channels, kernel_size=1)
+
+    def forward(self, feature_stride_8, feature_stride_16):
+        # 对stride=8的特征图进行下采样
+        downsampled_feature_stride_8 = self.down_sample_stride_8(feature_stride_8)
+
+        # 调整stride=8特征图的通道数
+        adjusted_feature_stride_8 = self.conv1x1_stride_8(downsampled_feature_stride_8)
+
+        # 调整stride=16特征图的通道数
+        # adjusted_feature_stride_16 = self.conv1x1_stride_16(feature_stride_16)
+
+        # 拼接调整后的特征图
+        fused_feature = torch.cat((adjusted_feature_stride_8, feature_stride_16), dim=1)
+
+        return fused_feature
+
+
+
 if __name__ == '__main__':
     net = SuperNet()
+    correlation1024 = PixelwiseXCorr(CA_channels=256)
+    correlation64 = PixelwiseXCorr(CA_channels=64)
+    fusion = FeatureFusion()
+
     x = torch.randn(1, 3, 255, 255)
     z = torch.randn(1, 3, 127, 127)
     for i in range(1000):
@@ -202,7 +232,21 @@ if __name__ == '__main__':
         print(net.architecture)
         x1 = net(x)
         z1 = net(z)
-        print(x1.size(), z1.size())
+        print(x1[0].size(), x1[1].size(), z1[0].size(), z1[1].size())
+
+        corr_pw1 = correlation1024(z1[0], x1[0])
+        corr_pw2 = correlation64(z1[1], x1[1])
+        print(corr_pw1.shape, corr_pw2.shape)
+        out = fusion(corr_pw1, corr_pw2)
+        print("out.shape: ", out.shape)
+    # torch.Size([1, 64, 32, 32])           x1[0].size()
+    # torch.Size([1, 256, 16, 16])          x1[1].size()
+
+    # torch.Size([1, 64, 16, 16])           z1[0].size()
+    # torch.Size([1, 256, 8, 8])            z1[1].size()
+
+
+
     # for i in range(1000):
     #     new_path_back = get_path_back()
     #     print(new_path_back)

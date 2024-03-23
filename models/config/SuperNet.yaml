@@ -20,14 +20,14 @@ ADJUST:
 
 BAN:
     BAN: True
-    TYPE: 'DepthwiseBAN'                                # 'head_supernet' | 'DepthwiseBAN'
+    TYPE: 'head_supernet'                                # 'head_supernet' | 'DepthwiseBAN'
     KWARGS:
+        in_channel: 64
         channel_list: [96, 128, 256]
         kernel_list: [3, 5, 7, 0]
-        inchannels: 64
         towernum: 8
         linear_reg: False
-        base_op_name: 'SeparableConv2d_BNReLU'
+#        base_op_name: 'SeparableConv2d_BNReLU'
 
 
 CUDA: True

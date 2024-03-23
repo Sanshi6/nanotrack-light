@@ -682,6 +682,7 @@ def load_pretrain_backbone(model, pretrained_path, print_unuse=True):
     model.load_state_dict(pretrained_dict, strict=False)
     return model
 
+
 def initialize_weights(model):
     for modules in [model.backbone, model.ban_head]:
         for m in modules.modules():

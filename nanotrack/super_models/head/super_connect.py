@@ -109,10 +109,10 @@ class reg_pred_head(nn.Module):
 
 
 class PixelwiseXCorr(nn.Module):
-    def __init__(self, in_channels=64, kernel_size=3):
+    def __init__(self, CA_channels=64):
         super(PixelwiseXCorr, self).__init__()
 
-        self.CA_layer = CAModule(channels=64)
+        self.CA_layer = CAModule(channels=CA_channels)
 
     def forward(self, kernel, search):
         feature = xcorr_pixelwise(search, kernel)  #
@@ -122,16 +122,39 @@ class PixelwiseXCorr(nn.Module):
         return corr
 
 
-class head_supernet(nn.Module):
-    def __init__(self, in_channel=64, channel_list=[64, 96, 128], kernel_list=[3, 5, 7, 0], towernum=8,
-                 linear_reg=False):
-        super(head_supernet, self).__init__()
+class FeatureFusion(nn.Module):
+    def __init__(self, in_channels_stride_8=256, in_channels_stride_16=64, out_channels=64):
+        super(FeatureFusion, self).__init__()
+        self.down_sample_stride_8 = nn.AvgPool2d(kernel_size=2, stride=2)
+        self.conv1x1_stride_8 = nn.Conv2d(in_channels_stride_8, out_channels, kernel_size=1)
+        # self.conv1x1_stride_16 = nn.Conv2d(in_channels_stride_16, out_channels, kernel_size=1)
 
-        self.corr_pw = PixelwiseXCorr()
+    def forward(self, feature_stride_8, feature_stride_16):
+        # 对stride=8的特征图进行下采样
+        downsampled_feature_stride_8 = self.down_sample_stride_8(feature_stride_8)
+
+        # 调整stride=8特征图的通道数
+        adjusted_feature_stride_8 = self.conv1x1_stride_8(downsampled_feature_stride_8)
+
+        # 调整stride=16特征图的通道数
+        # adjusted_feature_stride_16 = self.conv1x1_stride_16(feature_stride_16)
+
+        # 拼接调整后的特征图
+        fused_feature = torch.cat((adjusted_feature_stride_8, feature_stride_16), dim=1)
+
+        return fused_feature
+
+
+class head_supernet(nn.Module):
+    def __init__(self, in_channel=64, channel_list=[64, 96, 128], kernel_list=[3, 5, 7, 0], towernum=8, linear_reg=False):
+        super(head_supernet, self).__init__()
         base_op = SeparableConv2d_BNReLU
         self.cand_path = None
         self._get_path_back()
 
+        self.correlation1024 = PixelwiseXCorr(CA_channels=256)
+        self.correlation64 = PixelwiseXCorr(CA_channels=64)
+        self.fusion = FeatureFusion()
 
         self.num_cand = len(channel_list)
         self.cand_tower_cls = nn.ModuleList()
@@ -189,12 +212,18 @@ class head_supernet(nn.Module):
         cand_h_dict = {'cls': cls_total_path, 'reg': reg_total_path}
         self.cand_path = cand_h_dict
 
-    def forward(self, z_f, x_f, ):
+    def forward(self, z_f, x_f):
         """cand_dict key: cls, reg
          [0/1/2, []]"""
         cand_dict = self.cand_path
 
-        x_cls_reg = self.corr_pw(z_f, x_f)
+        corr_pw1 = self.correlation1024(z_f[0], x_f[0])
+        corr_pw2 = self.correlation64(z_f[1], x_f[1])
+        # print(corr_pw1.shape, corr_pw2.shape)
+        x_cls_reg = self.fusion(corr_pw1, corr_pw2)
+        # print("out.shape: ", out.shape)
+
+        # x_cls_reg = self.corr_pw(z_f, x_f)
 
         # cls
         cand_list_cls = cand_dict['cls']  # [0/1/2, []]
