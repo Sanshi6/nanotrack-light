@@ -218,7 +218,6 @@ class FeatureFusion(nn.Module):
         return fused_feature
 
 
-
 if __name__ == '__main__':
     net = SuperNet()
     correlation1024 = PixelwiseXCorr(CA_channels=256)
@@ -244,8 +243,6 @@ if __name__ == '__main__':
 
     # torch.Size([1, 64, 16, 16])           z1[0].size()
     # torch.Size([1, 256, 8, 8])            z1[1].size()
-
-
 
     # for i in range(1000):
     #     new_path_back = get_path_back()

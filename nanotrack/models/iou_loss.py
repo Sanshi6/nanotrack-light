@@ -7,6 +7,7 @@ class IOULoss(nn.Module):
         self.loc_loss_type = loc_loss_type
 
     def forward(self, pred, target, weight=None):
+        EPS = 1e-7
         pred_left = pred[:, 0]
         pred_top = pred[:, 1]
         pred_right = pred[:, 2]
@@ -21,14 +22,28 @@ class IOULoss(nn.Module):
         target_area = (target_left + target_right) * (target_top + target_bottom)
 
         w_intersect = torch.min(pred_left, target_left) + torch.min(pred_right, target_right)
+        w_intersect = torch.relu(w_intersect)
+
         g_w_intersect = torch.max(pred_left, target_left) + torch.max(pred_right, target_right)
+        g_w_intersect = torch.relu(g_w_intersect)
+
         h_intersect = torch.min(pred_bottom, target_bottom) + torch.min(pred_top, target_top)
+        h_intersect = torch.relu(h_intersect)
+
         g_h_intersect = torch.max(pred_bottom, target_bottom) + torch.max(pred_top, target_top)
-        ac_uion = g_w_intersect * g_h_intersect + 1e-7
-        area_intersect = w_intersect * h_intersect
+        g_h_intersect = torch.relu(g_h_intersect)
+
+        ac_uion = g_w_intersect * g_h_intersect + EPS
+        area_intersect = w_intersect * h_intersect + EPS
+
+
         area_union = target_area + pred_area - area_intersect
-        ious = (area_intersect + 1.0) / (area_union + 1.0)
+
+        ious = (area_intersect + EPS) / (area_union + EPS)
+        ious = torch.clamp(ious, min=EPS, max=1.0)  # 限制 IoU 值范围
+
         gious = ious - (ac_uion - area_union) / ac_uion
+        gious = torch.clamp(gious, min=EPS, max=1.0)  # 限制 IoU 值范围
 
         if self.loc_loss_type == 'iou':
             losses = -torch.log(ious)
