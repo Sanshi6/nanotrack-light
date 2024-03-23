@@ -50,27 +50,41 @@ TRAIN:
     PRETRAINED: ''
     SNAPSHOT_DIR: './snapshot'
 
+#    LR:
+#        TYPE: 'log'
+#        KWARGS:
+#            start_lr: 0.01     # 0.005
+#            end_lr: 0.001      # 0.0005
+#    LR_WARMUP:
+#        TYPE: 'step'
+#        EPOCH: 5
+#        KWARGS:
+#            start_lr: 0.001
+#            end_lr: 0.005
+#            step: 1
+
+#    for continue train subnet lr setting
     LR:
         TYPE: 'log'
         KWARGS:
-            start_lr: 0.01     # 0.005
-            end_lr: 0.001      # 0.0005
+            start_lr: 0.005    # 0.005
+            end_lr: 0.0005      # 0.0005
     LR_WARMUP:
         TYPE: 'step'
         EPOCH: 5
         KWARGS:
-            start_lr: 0.001
-            end_lr: 0.005
+            start_lr: 0.005
+            end_lr: 0.0005
             step: 1
 
 DATASET:
     NAMES:
     - 'GOT'
-#    - 'VID'
-#    - 'YOUTUBEBB'
-#    - 'COCO'
-#    - 'DET'
-#    - 'LASOT'
+    - 'VID'
+    - 'YOUTUBEBB'
+    - 'COCO'
+    - 'DET'
+    - 'LASOT'
 
     VIDEOS_PER_EPOCH: 2400000 # 2400000 # 600000
 

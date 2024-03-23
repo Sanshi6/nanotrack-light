@@ -5,7 +5,8 @@ from __future__ import absolute_import
 import time
 # ray library
 import ray
-from cv2 import cv2
+# from cv2 import cv2
+import cv2
 from ray import tune
 from ray.air import RunConfig
 from ray.tune import Experiment, TuneConfig
@@ -39,10 +40,10 @@ sys.path.append("..")
 
 # parser
 parser = argparse.ArgumentParser(description='parameters for Ocean tracker')
-parser.add_argument('--snapshot', default=r'E:\SiamProject\NanoTrack\models\snapshot\test.pth', type=str,
+parser.add_argument('--snapshot', default=r'/home/ubuntu/yl/CapstoneProject/nanotrack-light/snapshot/checkpoint_e49.pth', type=str,
                     help='snapshot of model')
-parser.add_argument('--config', default=r'E:\SiamProject\NanoTrack\models\config\Rep_config.yaml', type=str)
-parser.add_argument('--cache_dir', default=r'E:\SiamProject\NanoTrack\TPE_results', type=str,
+parser.add_argument('--config', default=r'/home/ubuntu/yl/CapstoneProject/nanotrack-light/models/config/SubNet.yaml', type=str)
+parser.add_argument('--cache_dir', default=r'/home/ubuntu/yl/CapstoneProject/nanotrack-light/TPE_result', type=str,
                     help='directory to store cache')
 parser.add_argument('--gpu_nums', default=1, type=int, help='gpu numbers')  # gpu
 parser.add_argument('--trial_per_gpu', default=8, type=int, help='trail per gpu')  # trial num
@@ -218,18 +219,18 @@ def fitness(config):
 
 
 if __name__ == "__main__":
-    ray.init(num_gpus=args.gpu_nums, num_cpus=args.gpu_nums * 8, object_store_memory=8000000000)
+    ray.init()
 
     params = {
-        "penalty_k": tune.quniform(0.001, 0.8, 0.001),
-        "scale_lr": tune.quniform(0.001, 0.8, 0.001),
-        "window_influence": tune.quniform(0.001, 0.8, 0.001),
+        "penalty_k": tune.quniform(0, 0.1, 0.001),
+        "scale_lr": tune.quniform(0, 0.8, 0.001),
+        "window_influence": tune.quniform(0, 0.8, 0.001),
     }
 
-    tuner = tune.Tuner(tune.with_resources(fitness, {"gpu": 0.25, "cpu": 4}), param_space=params,
+    tuner = tune.Tuner(tune.with_resources(fitness, {"gpu": 0.125, "cpu": 4}), param_space=params,
                        run_config=RunConfig(name="my_tune_run", storage_path="/home/ubuntu/yl/CapstoneProject/nanotrack-light/results/Ray_result", ),
                        tune_config=TuneConfig(num_samples=800, mode='max', metric='eao',
-                                              max_concurrent_trials=8, search_alg=OptunaSearch()))
+                                              max_concurrent_trials=16, search_alg=OptunaSearch()))
 
     results = tuner.fit()
     print(results.get_best_result(metric="eao", mode="max").config)

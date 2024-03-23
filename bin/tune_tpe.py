@@ -15,6 +15,7 @@ from ray.tune.search.ax import AxSearch
 from hyperopt import hp
 from pprint import pprint
 
+from nanotrack.sub_models.backbone.subnet import reparameterize_model
 # model library
 from toolkit.datasets import DatasetFactory
 from toolkit.utils.region import vot_overlap, vot_float2str

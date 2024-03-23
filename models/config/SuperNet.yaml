@@ -22,7 +22,7 @@ BAN:
     BAN: True
     TYPE: 'head_supernet'                                # 'head_supernet' | 'DepthwiseBAN'
     KWARGS:
-        in_channel: 64
+        in_channel: 128
         channel_list: [96, 128, 256]
         kernel_list: [3, 5, 7, 0]
         towernum: 8
@@ -63,14 +63,14 @@ TRAIN:
     LR:
         TYPE: 'log'
         KWARGS:
-            start_lr: 0.005
-            end_lr: 0.0005
+            start_lr: 0.01
+            end_lr: 0.001
     LR_WARMUP:
         TYPE: 'step'
         EPOCH: 5
         KWARGS:
-            start_lr: 0.001
-            end_lr: 0.005
+            start_lr: 0.005
+            end_lr: 0.01
             step: 1
 
 DATASET:

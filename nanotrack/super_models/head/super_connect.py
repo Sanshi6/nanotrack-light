@@ -146,7 +146,7 @@ class FeatureFusion(nn.Module):
 
 
 class head_supernet(nn.Module):
-    def __init__(self, in_channel=64, channel_list=[64, 96, 128], kernel_list=[3, 5, 7, 0], towernum=8, linear_reg=False):
+    def __init__(self, in_channel=128, channel_list=[64, 96, 128], kernel_list=[3, 5, 7, 0], towernum=8, linear_reg=False):
         super(head_supernet, self).__init__()
         base_op = SeparableConv2d_BNReLU
         self.cand_path = None

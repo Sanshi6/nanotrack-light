@@ -79,29 +79,29 @@ def build_data_loader():
 
 # backbone for train
 def build_opt_lr(model, current_epoch):
-    # # backbone train process
-    # for param in model.backbone.parameters():
-    #     param.requires_grad = False
-    # for m in model.backbone.modules():
-    #     if isinstance(m, nn.BatchNorm2d):
-    #         m.eval()
+    # backbone train process
+    for param in model.backbone.parameters():
+        param.requires_grad = False
+    for m in model.backbone.modules():
+        if isinstance(m, nn.BatchNorm2d):
+            m.eval()
 
-    # if current_epoch >= cfg.BACKBONE.TRAIN_EPOCH:
-    #     for layer in cfg.BACKBONE.TRAIN_LAYERS:
-    #         for param in getattr(model.backbone, layer).parameters():
-    #             param.requires_grad = True
-    #         for m in getattr(model.backbone, layer).modules():
-    #             if isinstance(m, nn.BatchNorm2d):
-    #                 m.train()
-    #
-    # # for MobileOne, train last stage.
-    # for param in getattr(model.backbone, 'stage4').parameters():
-    #     param.requires_grad = True
-    # for m in getattr(model.backbone, 'stage4').modules():
-    #     if isinstance(m, nn.BatchNorm2d):
-    #         m.train()
+    if current_epoch >= cfg.BACKBONE.TRAIN_EPOCH:
+        for layer in cfg.BACKBONE.TRAIN_LAYERS:
+            for param in getattr(model.backbone, layer).parameters():
+                param.requires_grad = True
+            for m in getattr(model.backbone, layer).modules():
+                if isinstance(m, nn.BatchNorm2d):
+                    m.train()
 
-    model.backbone.unfix(current_epoch / cfg.TRAIN.EPOCH)
+    # for MobileOne, train last stage.
+    for param in getattr(model.backbone, 'stage4').parameters():
+        param.requires_grad = True
+    for m in getattr(model.backbone, 'stage4').modules():
+        if isinstance(m, nn.BatchNorm2d):
+            m.train()
+
+    # model.backbone.unfix(current_epoch / cfg.TRAIN.EPOCH)
 
     for name, param in model.backbone.named_parameters():
         if param.requires_grad:

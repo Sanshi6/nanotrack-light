@@ -37,7 +37,9 @@ def eval(args):
     trackers = [x.split('/')[-1].split("\\")[-1] for x in trackers]
     assert len(trackers) > 0
     args.num = min(args.num, len(trackers))
-    root = './datasets'
+    # for tpe
+    root = '/home/ubuntu/yl/CapstoneProject/nanotrack-light/datasets'
+    # root = './datasets'
     root = os.path.join(root, args.dataset)
     if 'OTB' in args.dataset:
         dataset = OTBDataset(args.dataset, root)

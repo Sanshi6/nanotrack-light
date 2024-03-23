@@ -14,3 +14,4 @@ datasets/
 results/
 *.param
 *.pth
+.*
